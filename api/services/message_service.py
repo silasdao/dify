@@ -28,21 +28,26 @@ class MessageService:
         )
 
         if first_id:
-            first_message = db.session.query(Message) \
-                .filter(Message.conversation_id == conversation.id, Message.id == first_id).first()
-
-            if not first_message:
+            if (
+                first_message := db.session.query(Message)
+                .filter(
+                    Message.conversation_id == conversation.id,
+                    Message.id == first_id,
+                )
+                .first()
+            ):
+                history_messages = db.session.query(Message).filter(
+                    Message.conversation_id == conversation.id,
+                    Message.created_at < first_message.created_at,
+                    Message.id != first_message.id
+                ) \
+                        .order_by(Message.created_at.desc()).limit(limit).all()
+            else:
                 raise FirstMessageNotExistsError()
 
-            history_messages = db.session.query(Message).filter(
-                Message.conversation_id == conversation.id,
-                Message.created_at < first_message.created_at,
-                Message.id != first_message.id
-            ) \
-                .order_by(Message.created_at.desc()).limit(limit).all()
         else:
             history_messages = db.session.query(Message).filter(Message.conversation_id == conversation.id) \
-                .order_by(Message.created_at.desc()).limit(limit).all()
+                    .order_by(Message.created_at.desc()).limit(limit).all()
 
         has_more = False
         if len(history_messages) == limit:
@@ -86,15 +91,14 @@ class MessageService:
             base_query = base_query.filter(Message.id.in_(include_ids))
 
         if last_id:
-            last_message = base_query.filter(Message.id == last_id).first()
-
-            if not last_message:
+            if last_message := base_query.filter(Message.id == last_id).first():
+                history_messages = base_query.filter(
+                    Message.created_at < last_message.created_at,
+                    Message.id != last_message.id
+                ).order_by(Message.created_at.desc()).limit(limit).all()
+            else:
                 raise LastMessageNotExistsError()
 
-            history_messages = base_query.filter(
-                Message.created_at < last_message.created_at,
-                Message.id != last_message.id
-            ).order_by(Message.created_at.desc()).limit(limit).all()
         else:
             history_messages = base_query.order_by(Message.created_at.desc()).limit(limit).all()
 
@@ -133,7 +137,7 @@ class MessageService:
             db.session.delete(feedback)
         elif rating and feedback:
             feedback.rating = rating
-        elif not rating and not feedback:
+        elif not rating:
             raise ValueError('rating cannot be None when feedback not exists')
         else:
             feedback = MessageFeedback(
@@ -203,10 +207,7 @@ class MessageService:
 
         external_context = memory.load_memory_variables({})
 
-        questions = LLMGenerator.generate_suggested_questions_after_answer(
-            tenant_id=app_model.tenant_id,
-            **external_context
+        return LLMGenerator.generate_suggested_questions_after_answer(
+            tenant_id=app_model.tenant_id, **external_context
         )
-
-        return questions
 

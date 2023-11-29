@@ -23,7 +23,9 @@ def add_document_to_index_task(document_id: str):
 
     Usage: add_document_to_index.delay(document_id)
     """
-    logging.info(click.style('Start add document to index: {}'.format(document_id), fg='green'))
+    logging.info(
+        click.style(f'Start add document to index: {document_id}', fg='green')
+    )
     start_at = time.perf_counter()
 
     document = db.session.query(Document).filter(Document.id == document_id).first()
@@ -33,7 +35,7 @@ def add_document_to_index_task(document_id: str):
     if document.indexing_status != 'completed':
         return
 
-    indexing_cache_key = 'document_{}_indexing'.format(document.id)
+    indexing_cache_key = f'document_{document.id}_indexing'
 
     try:
         segments = db.session.query(DocumentSegment).filter(
@@ -65,8 +67,7 @@ def add_document_to_index_task(document_id: str):
 
             previous_node = node
 
-            nodes.append(node)
-
+            nodes.append(previous_node)
         dataset = document.dataset
 
         if not dataset:
@@ -87,7 +88,11 @@ def add_document_to_index_task(document_id: str):
 
         end_at = time.perf_counter()
         logging.info(
-            click.style('Document added to index: {} latency: {}'.format(document.id, end_at - start_at), fg='green'))
+            click.style(
+                f'Document added to index: {document.id} latency: {end_at - start_at}',
+                fg='green',
+            )
+        )
     except Exception as e:
         logging.exception("add document to index failed")
         document.enabled = False

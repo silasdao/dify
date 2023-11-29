@@ -12,5 +12,4 @@ class SuggestedQuestionsAfterAnswerOutputParser(BaseOutputParser):
 
     def parse(self, text: str) -> Any:
         json_string = text.strip()
-        json_obj = json.loads(json_string)
-        return json_obj
+        return json.loads(json_string)

@@ -164,7 +164,10 @@ class AgentLoopGatherCallbackHandler(BaseCallbackHandler):
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
         # Final Answer
-        if self._current_loop and (self._current_loop.status == 'llm_end' or self._current_loop.status == 'agent_action'):
+        if self._current_loop and self._current_loop.status in [
+            'llm_end',
+            'agent_action',
+        ]:
             self._current_loop.status = 'agent_finish'
             self._current_loop.completed = True
             self._current_loop.completed_at = time.perf_counter()

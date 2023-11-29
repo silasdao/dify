@@ -41,12 +41,9 @@ class VectorStore:
     @retry(reraise=True, retry=retry_if_exception_type(ReadTimeout), stop=stop_after_attempt(3))
     def get_index(self, service_context: ServiceContext, index_struct: dict) -> GPTVectorStoreIndex:
         vector_store_config: dict = index_struct.get('vector_store')
-        index = self.get_client().get_index(
-            service_context=service_context,
-            config=vector_store_config
+        return self.get_client().get_index(
+            service_context=service_context, config=vector_store_config
         )
-
-        return index
 
     def to_index_struct(self, index_id: str) -> dict:
         return {

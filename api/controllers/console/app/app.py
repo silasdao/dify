@@ -46,10 +46,14 @@ app_detail_fields = {
 
 
 def _get_app(app_id, tenant_id):
-    app = db.session.query(App).filter(App.id == app_id, App.tenant_id == tenant_id).first()
-    if not app:
+    if (
+        app := db.session.query(App)
+        .filter(App.id == app_id, App.tenant_id == tenant_id)
+        .first()
+    ):
+        return app
+    else:
         raise AppNotFoundError
-    return app
 
 
 class AppListApi(Resource):
@@ -94,13 +98,14 @@ class AppListApi(Resource):
         parser.add_argument('limit', type=inputs.int_range(1, 100), required=False, default=20, location='args')
         args = parser.parse_args()
 
-        app_models = db.paginate(
-            db.select(App).where(App.tenant_id == current_user.current_tenant_id).order_by(App.created_at.desc()),
+        return db.paginate(
+            db.select(App)
+            .where(App.tenant_id == current_user.current_tenant_id)
+            .order_by(App.created_at.desc()),
             page=args['page'],
             per_page=args['limit'],
-            error_out=False)
-
-        return app_models
+            error_out=False,
+        )
 
     @setup_required
     @login_required
@@ -259,9 +264,7 @@ class AppApi(Resource):
     def get(self, app_id):
         """Get app detail"""
         app_id = str(app_id)
-        app = _get_app(app_id, current_user.current_tenant_id)
-
-        return app
+        return _get_app(app_id, current_user.current_tenant_id)
 
     @setup_required
     @login_required
@@ -406,8 +409,8 @@ class AppRateLimit(Resource):
 class AppCopy(Resource):
     @staticmethod
     def create_app_copy(app):
-        copy_app = App(
-            name=app.name + ' copy',
+        return App(
+            name=f'{app.name} copy',
             icon=app.icon,
             icon_background=app.icon_background,
             tenant_id=app.tenant_id,
@@ -416,13 +419,12 @@ class AppCopy(Resource):
             enable_site=app.enable_site,
             enable_api=app.enable_api,
             api_rpm=app.api_rpm,
-            api_rph=app.api_rph
+            api_rph=app.api_rph,
         )
-        return copy_app
 
     @staticmethod
     def create_app_model_config_copy(app_config, copy_app_id):
-        copy_app_model_config = AppModelConfig(
+        return AppModelConfig(
             app_id=copy_app_id,
             provider=app_config.provider,
             model_id=app_config.model_id,
@@ -434,9 +436,8 @@ class AppCopy(Resource):
             model=app_config.model,
             user_input_form=app_config.user_input_form,
             pre_prompt=app_config.pre_prompt,
-            agent_mode=app_config.agent_mode
+            agent_mode=app_config.agent_mode,
         )
-        return copy_app_model_config
 
     @setup_required
     @login_required
@@ -449,11 +450,11 @@ class AppCopy(Resource):
         copy_app = self.create_app_copy(app)
         db.session.add(copy_app)
 
-        app_config = db.session.query(AppModelConfig). \
-            filter(AppModelConfig.app_id == app_id). \
-            one_or_none()
-
-        if app_config:
+        if (
+            app_config := db.session.query(AppModelConfig)
+            .filter(AppModelConfig.app_id == app_id)
+            .one_or_none()
+        ):
             copy_app_model_config = self.create_app_model_config_copy(app_config, copy_app.id)
             db.session.add(copy_app_model_config)
             db.session.commit()

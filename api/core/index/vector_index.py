@@ -40,9 +40,11 @@ class VectorIndex:
         for node in nodes:
             node_hash = node.doc_hash
 
-            # if node hash in cached embedding tables, use cached embedding
-            embedding = db.session.query(Embedding).filter_by(hash=node_hash).first()
-            if embedding:
+            if (
+                embedding := db.session.query(Embedding)
+                .filter_by(hash=node_hash)
+                .first()
+            ):
                 node.embedding = embedding.get_embedding()
                 embedded_nodes.append(node)
             else:
@@ -129,8 +131,7 @@ class VectorIndex:
     def _filter_duplicate_nodes(self, index: BaseGPTVectorStoreIndex, nodes: List[Node]) -> List[Node]:
         for node in nodes:
             node_id = node.doc_id
-            exists_duplicate_node = index.exists_by_node_id(node_id)
-            if exists_duplicate_node:
+            if exists_duplicate_node := index.exists_by_node_id(node_id):
                 nodes.remove(node)
 
         return nodes

@@ -31,8 +31,7 @@ def encrypt(text, public_key):
 
     rsa_key = RSA.import_key(public_key)
     cipher = PKCS1_OAEP.new(rsa_key)
-    encrypted_text = cipher.encrypt(text.encode())
-    return encrypted_text
+    return cipher.encrypt(text.encode())
 
 
 def decrypt(encrypted_text, tenant_id):

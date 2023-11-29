@@ -9,7 +9,7 @@ from core.constant import llm_constant
 class TokenCalculator:
     @classmethod
     def get_num_tokens(cls, model_name: str, text: str):
-        if len(text) == 0:
+        if not text:
             return 0
 
         enc = tiktoken.encoding_for_model(model_name)

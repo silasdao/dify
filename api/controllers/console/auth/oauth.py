@@ -28,11 +28,7 @@ def get_oauth_providers():
                                    redirect_uri=current_app.config.get(
                                        'CONSOLE_URL') + '/console/api/oauth/authorize/google')
 
-        OAUTH_PROVIDERS = {
-            'github': github_oauth,
-            'google': google_oauth
-        }
-        return OAUTH_PROVIDERS
+        return {'github': github_oauth, 'google': google_oauth}
 
 
 class OAuthLogin(Resource):
@@ -67,7 +63,10 @@ class OAuthCallback(Resource):
 
         account = _generate_account(provider, user_info)
         # Check account status
-        if account.status == AccountStatus.BANNED.value or account.status == AccountStatus.CLOSED.value:
+        if account.status in [
+            AccountStatus.BANNED.value,
+            AccountStatus.CLOSED.value,
+        ]:
             return {'error': 'Account is banned or closed.'}, 403
 
         if account.status == AccountStatus.PENDING.value:
@@ -109,10 +108,7 @@ def _generate_account(provider: str, user_info: OAuthUserInfo):
 
         # Set interface language
         preferred_lang = request.accept_languages.best_match(['zh', 'en'])
-        if preferred_lang == 'zh':
-            interface_language = 'zh-Hans'
-        else:
-            interface_language = 'en-US'
+        interface_language = 'zh-Hans' if preferred_lang == 'zh' else 'en-US'
         account.interface_language = interface_language
         db.session.commit()
 

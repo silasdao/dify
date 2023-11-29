@@ -30,12 +30,7 @@ def validate_app_token(view=None):
             return view(app_model, None, *args, **kwargs)
         return decorated
 
-    if view:
-        return decorator(view)
-
-    # if view is None, it means that the decorator is used without parentheses
-    # use the decorator as a function for method_decorators
-    return decorator
+    return decorator(view) if view else decorator
 
 
 def validate_dataset_token(view=None):
@@ -51,12 +46,7 @@ def validate_dataset_token(view=None):
             return view(dataset, *args, **kwargs)
         return decorated
 
-    if view:
-        return decorator(view)
-
-    # if view is None, it means that the decorator is used without parentheses
-    # use the decorator as a function for method_decorators
-    return decorator
+    return decorator(view) if view else decorator
 
 
 def validate_and_get_api_token(scope=None):

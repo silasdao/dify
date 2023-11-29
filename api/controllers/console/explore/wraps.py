@@ -21,10 +21,14 @@ def installed_app_required(view=None):
 
             del kwargs['installed_app_id']
 
-            installed_app = db.session.query(InstalledApp).filter(
-                InstalledApp.id == str(installed_app_id),
-                InstalledApp.tenant_id == current_user.current_tenant_id
-            ).first()
+            installed_app = (
+                db.session.query(InstalledApp)
+                .filter(
+                    InstalledApp.id == installed_app_id,
+                    InstalledApp.tenant_id == current_user.current_tenant_id,
+                )
+                .first()
+            )
 
             if installed_app is None:
                 raise NotFound('Installed app not found')
@@ -36,11 +40,10 @@ def installed_app_required(view=None):
                 raise NotFound('Installed app not found')
 
             return view(installed_app, *args, **kwargs)
+
         return decorated
 
-    if view:
-        return decorator(view)
-    return decorator
+    return decorator(view) if view else decorator
 
 
 class InstalledAppResource(Resource):

@@ -29,17 +29,16 @@ class ConversationService:
             base_query = base_query.filter(~Conversation.id.in_(exclude_ids))
 
         if last_id:
-            last_conversation = base_query.filter(
+            if last_conversation := base_query.filter(
                 Conversation.id == last_id,
-            ).first()
-
-            if not last_conversation:
+            ).first():
+                conversations = base_query.filter(
+                    Conversation.created_at < last_conversation.created_at,
+                    Conversation.id != last_conversation.id
+                ).order_by(Conversation.created_at.desc()).limit(limit).all()
+            else:
                 raise LastConversationNotExistsError()
 
-            conversations = base_query.filter(
-                Conversation.created_at < last_conversation.created_at,
-                Conversation.id != last_conversation.id
-            ).order_by(Conversation.created_at.desc()).limit(limit).all()
         else:
             conversations = base_query.order_by(Conversation.created_at.desc()).limit(limit).all()
 

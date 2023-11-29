@@ -44,13 +44,14 @@ class AppSiteApi(WebApiResource):
     @marshal_with(app_fields)
     def get(self, app_model, end_user):
         """Retrieve app site info."""
-        # get site
-        site = db.session.query(Site).filter(Site.app_id == app_model.id).first()
-
-        if not site:
+        if (
+            site := db.session.query(Site)
+            .filter(Site.app_id == app_model.id)
+            .first()
+        ):
+            return AppSiteInfo(app_model.tenant, app_model, site, end_user.id)
+        else:
             raise Forbidden()
-
-        return AppSiteInfo(app_model.tenant, app_model, site, end_user.id)
 
 
 api.add_resource(AppSiteApi, '/site')

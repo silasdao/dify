@@ -40,9 +40,7 @@ class ECC_AES:
         # Encrypt data using AES key
         cipher = AES.new(aes_key, AES.MODE_ECB)
         padded_text = pad(text.encode(), AES.block_size)
-        ciphertext = cipher.encrypt(padded_text)
-
-        return ciphertext
+        return cipher.encrypt(padded_text)
 
     def decrypt(self, ciphertext, nonce):
         if not self._private_key:

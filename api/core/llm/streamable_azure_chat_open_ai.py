@@ -72,8 +72,9 @@ class StreamableAzureChatOpenAI(AzureChatOpenAI):
             self, messages: List[BaseMessage], stop: Optional[List[str]] = None
     ) -> ChatResult:
         self.callback_manager.on_llm_start(
-            {"name": self.__class__.__name__}, [(message.type + ": " + message.content) for message in messages],
-            verbose=self.verbose
+            {"name": self.__class__.__name__},
+            [f"{message.type}: {message.content}" for message in messages],
+            verbose=self.verbose,
         )
 
         chat_result = super()._generate(messages, stop)
@@ -91,13 +92,15 @@ class StreamableAzureChatOpenAI(AzureChatOpenAI):
     ) -> ChatResult:
         if self.callback_manager.is_async:
             await self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, [(message.type + ": " + message.content) for message in messages],
-                verbose=self.verbose
+                {"name": self.__class__.__name__},
+                [f"{message.type}: {message.content}" for message in messages],
+                verbose=self.verbose,
             )
         else:
             self.callback_manager.on_llm_start(
-                {"name": self.__class__.__name__}, [(message.type + ": " + message.content) for message in messages],
-                verbose=self.verbose
+                {"name": self.__class__.__name__},
+                [f"{message.type}: {message.content}" for message in messages],
+                verbose=self.verbose,
             )
 
         chat_result = super()._generate(messages, stop)

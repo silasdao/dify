@@ -50,7 +50,7 @@ class AgentBuilder:
             [agent_loop_gather_callback_handler, DifyStdOutCallbackHandler()]
         )
 
-        agent_chain = AgentExecutor.from_agent_and_tools(
+        return AgentExecutor.from_agent_and_tools(
             tools=tools,
             agent=agent,
             memory=memory,
@@ -60,30 +60,22 @@ class AgentBuilder:
             # `generate` will continue to complete the last inference after reaching the iteration limit or request time limit
         )
 
-        return agent_chain
-
     @classmethod
     def build_agent_prompt_template(cls, tools, memory: Optional[BaseChatMemory]):
-        if memory:
-            prompt = ConversationalAgent.create_prompt(
+        return (
+            ConversationalAgent.create_prompt(
                 tools=tools,
             )
-        else:
-            prompt = ZeroShotAgent.create_prompt(
+            if memory
+            else ZeroShotAgent.create_prompt(
                 tools=tools,
             )
-
-        return prompt
+        )
 
     @classmethod
     def build_agent(cls, agent_llm_chain: LLMChain, memory: Optional[BaseChatMemory]):
-        if memory:
-            agent = ConversationalAgent(
-                llm_chain=agent_llm_chain
-            )
-        else:
-            agent = ZeroShotAgent(
-                llm_chain=agent_llm_chain
-            )
-
-        return agent
+        return (
+            ConversationalAgent(llm_chain=agent_llm_chain)
+            if memory
+            else ZeroShotAgent(llm_chain=agent_llm_chain)
+        )

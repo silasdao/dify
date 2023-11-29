@@ -18,7 +18,12 @@ def generate_conversation_summary_task(conversation_id: str):
 
     Usage: generate_conversation_summary_task.delay(conversation_id)
     """
-    logging.info(click.style('Start generate conversation summary: {}'.format(conversation_id), fg='green'))
+    logging.info(
+        click.style(
+            f'Start generate conversation summary: {conversation_id}',
+            fg='green',
+        )
+    )
     start_at = time.perf_counter()
 
     conversation = db.session.query(Conversation).filter(Conversation.id == conversation_id).first()
@@ -41,6 +46,11 @@ def generate_conversation_summary_task(conversation_id: str):
             db.session.commit()
 
         end_at = time.perf_counter()
-        logging.info(click.style('Conversation summary generated: {} latency: {}'.format(conversation_id, end_at - start_at), fg='green'))
+        logging.info(
+            click.style(
+                f'Conversation summary generated: {conversation_id} latency: {end_at - start_at}',
+                fg='green',
+            )
+        )
     except Exception:
         logging.exception("generate conversation summary failed")

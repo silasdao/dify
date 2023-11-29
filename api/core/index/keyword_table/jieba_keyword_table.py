@@ -72,7 +72,7 @@ class GPTJIEBAKeywordTableIndex(BaseGPTKeywordTableIndex):
         return jieba_extract_keywords(text, max_keywords=self.max_keywords_per_chunk)
 
     @classmethod
-    def get_query_map(self) -> QueryMap:
+    def get_query_map(cls) -> QueryMap:
         """Get query map."""
         super_map = super().get_query_map()
         super_map[QueryMode.DEFAULT] = GPTKeywordTableJIEBAQuery

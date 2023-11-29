@@ -39,19 +39,17 @@ class WeaviateVectorStoreClient(BaseVectorStoreClient):
         if self._client is None:
             raise Exception("Vector client is not initialized.")
 
-        # {"class_prefix": "Gpt_index_xxx"}
-        class_prefix = config.get('class_prefix')
-        if not class_prefix:
-            raise Exception("class_prefix cannot be None.")
-
-        return GPTWeaviateEnhanceIndex(
-            service_context=service_context,
-            index_struct=index_struct,
-            vector_store=WeaviateWithSimilaritiesVectorStore(
-                weaviate_client=self._client,
-                class_prefix=class_prefix
+        if class_prefix := config.get('class_prefix'):
+            return GPTWeaviateEnhanceIndex(
+                service_context=service_context,
+                index_struct=index_struct,
+                vector_store=WeaviateWithSimilaritiesVectorStore(
+                    weaviate_client=self._client,
+                    class_prefix=class_prefix
+                )
             )
-        )
+        else:
+            raise Exception("class_prefix cannot be None.")
 
     def to_index_config(self, index_id: str) -> dict:
         return {"class_prefix": index_id}
@@ -114,17 +112,12 @@ class WeaviateWithSimilaritiesVectorStore(WeaviateVectorStore, EnhanceVectorStor
         # parse results
         parsed_result = parse_get_response(query_result)
         entries = parsed_result[class_name]
-        results = [self._to_node(entry) for entry in entries]
-        return results
+        return [self._to_node(entry) for entry in entries]
 
     def _to_node(self, entry: Dict) -> Node:
         """Convert to Node."""
         extra_info_str = entry["extra_info"]
-        if extra_info_str == "":
-            extra_info = None
-        else:
-            extra_info = json.loads(extra_info_str)
-
+        extra_info = None if extra_info_str == "" else json.loads(extra_info_str)
         if 'certainty' in entry['_additional']:
             if extra_info:
                 extra_info['similarity'] = entry['_additional']['certainty']
@@ -132,11 +125,7 @@ class WeaviateWithSimilaritiesVectorStore(WeaviateVectorStore, EnhanceVectorStor
                 extra_info = {'similarity': entry['_additional']['certainty']}
 
         node_info_str = entry["node_info"]
-        if node_info_str == "":
-            node_info = None
-        else:
-            node_info = json.loads(node_info_str)
-
+        node_info = None if node_info_str == "" else json.loads(node_info_str)
         relationships_str = entry["relationships"]
         relationships: Dict[DocumentRelationship, str]
         if relationships_str == "":
@@ -179,7 +168,7 @@ class WeaviateWithSimilaritiesVectorStore(WeaviateVectorStore, EnhanceVectorStor
         :param node_id: node id
         """
         entry = get_by_node_id(self._client, node_id, self._class_prefix)
-        return True if entry else False
+        return bool(entry)
 
 
 class GPTWeaviateEnhanceIndex(GPTWeaviateIndex, BaseGPTVectorStoreIndex):
@@ -252,7 +241,4 @@ def get_by_node_id(client: Any, node_id: str, class_prefix: str) -> Optional[Dic
     query_result = query.do()
     parsed_result = parse_get_response(query_result)
     entries = parsed_result[class_name]
-    if len(entries) == 0:
-        return None
-
-    return entries[0]
+    return None if len(entries) == 0 else entries[0]

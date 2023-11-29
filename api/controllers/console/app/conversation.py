@@ -140,8 +140,8 @@ class CompletionConversationApi(Resource):
                 Message, Message.conversation_id == Conversation.id
             ).filter(
                 or_(
-                    Message.query.ilike('%{}%'.format(args['keyword'])),
-                    Message.answer.ilike('%{}%'.format(args['keyword']))
+                    Message.query.ilike(f"%{args['keyword']}%"),
+                    Message.answer.ilike(f"%{args['keyword']}%"),
                 )
             )
 
@@ -178,14 +178,9 @@ class CompletionConversationApi(Resource):
 
         query = query.order_by(Conversation.created_at.desc())
 
-        conversations = db.paginate(
-            query,
-            page=args['page'],
-            per_page=args['limit'],
-            error_out=False
+        return db.paginate(
+            query, page=args['page'], per_page=args['limit'], error_out=False
         )
-
-        return conversations
 
 
 class CompletionConversationDetailApi(Resource):
@@ -273,12 +268,11 @@ class ChatConversationApi(Resource):
                 Message, Message.conversation_id == Conversation.id
             ).filter(
                 or_(
-                    Message.query.ilike('%{}%'.format(args['keyword'])),
-                    Message.answer.ilike('%{}%'.format(args['keyword'])),
-                    Conversation.name.ilike('%{}%'.format(args['keyword'])),
-                    Conversation.introduction.ilike('%{}%'.format(args['keyword'])),
-                ),
-
+                    Message.query.ilike(f"%{args['keyword']}%"),
+                    Message.answer.ilike(f"%{args['keyword']}%"),
+                    Conversation.name.ilike(f"%{args['keyword']}%"),
+                    Conversation.introduction.ilike(f"%{args['keyword']}%"),
+                )
             )
 
         account = current_user
@@ -322,14 +316,9 @@ class ChatConversationApi(Resource):
 
         query = query.order_by(Conversation.created_at.desc())
 
-        conversations = db.paginate(
-            query,
-            page=args['page'],
-            per_page=args['limit'],
-            error_out=False
+        return db.paginate(
+            query, page=args['page'], per_page=args['limit'], error_out=False
         )
-
-        return conversations
 
 
 class ChatConversationDetailApi(Resource):

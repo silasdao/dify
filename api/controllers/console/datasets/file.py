@@ -70,7 +70,7 @@ class FileApi(Resource):
 
         # user uuid as file name
         file_uuid = str(uuid.uuid4())
-        file_key = 'upload_files/' + current_user.current_tenant_id + '/' + file_uuid + '.' + extension
+        file_key = f'upload_files/{current_user.current_tenant_id}/{file_uuid}.{extension}'
 
         # save file to storage
         storage.save(file_key, file_content)
@@ -110,8 +110,8 @@ class FilePreviewApi(Resource):
             return cached_response['response']
 
         upload_file = db.session.query(UploadFile) \
-            .filter(UploadFile.id == file_id) \
-            .first()
+                .filter(UploadFile.id == file_id) \
+                .first()
 
         if not upload_file:
             raise NotFound("File not found")
@@ -139,7 +139,7 @@ class FilePreviewApi(Resource):
                     data = fp.read()
                     text = data.decode(encoding='utf-8').strip() if data else ''
 
-        text = text[0:PREVIEW_WORDS_LIMIT] if text else ''
+        text = text[:PREVIEW_WORDS_LIMIT] if text else ''
         return {'content': text}
 
 

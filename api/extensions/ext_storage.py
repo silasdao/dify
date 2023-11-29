@@ -37,7 +37,7 @@ class Storage:
             if not self.folder or self.folder.endswith('/'):
                 filename = self.folder + filename
             else:
-                filename = self.folder + '/' + filename
+                filename = f'{self.folder}/{filename}'
 
             folder = os.path.dirname(filename)
             os.makedirs(folder, exist_ok=True)
@@ -59,7 +59,7 @@ class Storage:
             if not self.folder or self.folder.endswith('/'):
                 filename = self.folder + filename
             else:
-                filename = self.folder + '/' + filename
+                filename = f'{self.folder}/{filename}'
 
             if not os.path.exists(filename):
                 raise FileNotFoundError("File not found")
@@ -77,7 +77,7 @@ class Storage:
             if not self.folder or self.folder.endswith('/'):
                 filename = self.folder + filename
             else:
-                filename = self.folder + '/' + filename
+                filename = f'{self.folder}/{filename}'
 
             if not os.path.exists(filename):
                 raise FileNotFoundError("File not found")
@@ -96,7 +96,7 @@ class Storage:
             if not self.folder or self.folder.endswith('/'):
                 filename = self.folder + filename
             else:
-                filename = self.folder + '/' + filename
+                filename = f'{self.folder}/{filename}'
 
             return os.path.exists(filename)
 

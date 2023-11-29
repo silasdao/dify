@@ -126,32 +126,30 @@ class MessageMoreLikeThisApi(InstalledAppResource):
 def compact_response(response: Union[dict | Generator]) -> Response:
     if isinstance(response, dict):
         return Response(response=json.dumps(response), status=200, mimetype='application/json')
-    else:
-        def generate() -> Generator:
-            try:
-                for chunk in response:
-                    yield chunk
-            except MessageNotExistsError:
-                yield "data: " + json.dumps(api.handle_error(NotFound("Message Not Exists.")).get_json()) + "\n\n"
-            except MoreLikeThisDisabledError:
-                yield "data: " + json.dumps(api.handle_error(AppMoreLikeThisDisabledError()).get_json()) + "\n\n"
-            except ProviderTokenNotInitError:
-                yield "data: " + json.dumps(api.handle_error(ProviderNotInitializeError()).get_json()) + "\n\n"
-            except QuotaExceededError:
-                yield "data: " + json.dumps(api.handle_error(ProviderQuotaExceededError()).get_json()) + "\n\n"
-            except ModelCurrentlyNotSupportError:
-                yield "data: " + json.dumps(api.handle_error(ProviderModelCurrentlyNotSupportError()).get_json()) + "\n\n"
-            except (LLMBadRequestError, LLMAPIConnectionError, LLMAPIUnavailableError,
+    def generate() -> Generator:
+        try:
+            yield from response
+        except MessageNotExistsError:
+            yield "data: " + json.dumps(api.handle_error(NotFound("Message Not Exists.")).get_json()) + "\n\n"
+        except MoreLikeThisDisabledError:
+            yield f"data: {json.dumps(api.handle_error(AppMoreLikeThisDisabledError()).get_json())}" + "\n\n"
+        except ProviderTokenNotInitError:
+            yield f"data: {json.dumps(api.handle_error(ProviderNotInitializeError()).get_json())}" + "\n\n"
+        except QuotaExceededError:
+            yield f"data: {json.dumps(api.handle_error(ProviderQuotaExceededError()).get_json())}" + "\n\n"
+        except ModelCurrentlyNotSupportError:
+            yield f"data: {json.dumps(api.handle_error(ProviderModelCurrentlyNotSupportError()).get_json())}" + "\n\n"
+        except (LLMBadRequestError, LLMAPIConnectionError, LLMAPIUnavailableError,
                     LLMRateLimitError, LLMAuthorizationError) as e:
-                yield "data: " + json.dumps(api.handle_error(CompletionRequestError(str(e))).get_json()) + "\n\n"
-            except ValueError as e:
-                yield "data: " + json.dumps(api.handle_error(e).get_json()) + "\n\n"
-            except Exception:
-                logging.exception("internal server error.")
-                yield "data: " + json.dumps(api.handle_error(InternalServerError()).get_json()) + "\n\n"
+            yield f"data: {json.dumps(api.handle_error(CompletionRequestError(str(e))).get_json())}" + "\n\n"
+        except ValueError as e:
+            yield f"data: {json.dumps(api.handle_error(e).get_json())}" + "\n\n"
+        except Exception:
+            logging.exception("internal server error.")
+            yield f"data: {json.dumps(api.handle_error(InternalServerError()).get_json())}" + "\n\n"
 
-        return Response(stream_with_context(generate()), status=200,
-                        mimetype='text/event-stream')
+    return Response(stream_with_context(generate()), status=200,
+                    mimetype='text/event-stream')
 
 
 class MessageSuggestedQuestionApi(InstalledAppResource):

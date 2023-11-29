@@ -30,8 +30,7 @@ class OneLineFormatter(StrictFormatter):
 
             results.append((literal_text, field_name, '', None))
 
-        remaining_literal_text = format_string[last_end:]
-        if remaining_literal_text:
+        if remaining_literal_text := format_string[last_end:]:
             results.append((remaining_literal_text, None, None, None))
 
         return results

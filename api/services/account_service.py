@@ -33,7 +33,10 @@ class AccountService:
         if not account:
             raise AccountLoginError('Invalid email or password.')
 
-        if account.status == AccountStatus.BANNED.value or account.status == AccountStatus.CLOSED.value:
+        if account.status in [
+            AccountStatus.BANNED.value,
+            AccountStatus.CLOSED.value,
+        ]:
             raise AccountLoginError('Account is banned or closed.')
 
         if account.status == AccountStatus.PENDING.value:
@@ -94,11 +97,9 @@ class AccountService:
     def link_account_integrate(provider: str, open_id: str, account: Account) -> None:
         """Link account integrate"""
         try:
-            # Query whether there is an existing binding record for the same provider
-            account_integrate: Optional[AccountIntegrate] = AccountIntegrate.query.filter_by(account_id=account.id,
-                                                                                             provider=provider).first()
-
-            if account_integrate:
+            if account_integrate := AccountIntegrate.query.filter_by(
+                account_id=account.id, provider=provider
+            ).first():
                 # If it exists, update the record
                 account_integrate.open_id = open_id
                 account_integrate.encrypted_token = ""  # todo
@@ -188,8 +189,9 @@ class TenantService:
         if not tenant:
             raise TenantNotFound("Tenant not found.")
 
-        ta = TenantAccountJoin.query.filter_by(tenant_id=tenant.id, account_id=account.id).first()
-        if ta:
+        if ta := TenantAccountJoin.query.filter_by(
+            tenant_id=tenant.id, account_id=account.id
+        ).first():
             tenant.role = ta.role
         else:
             raise TenantNotFound("Tenant not found for the account.")

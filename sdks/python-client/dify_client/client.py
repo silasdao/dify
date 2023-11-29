@@ -13,9 +13,9 @@ class DifyClient:
         }
 
         url = f"{self.base_url}{endpoint}"
-        response = requests.request(method, url, json=data, params=params, headers=headers, stream=stream)
-
-        return response
+        return requests.request(
+            method, url, json=data, params=params, headers=headers, stream=stream
+        )
 
     def message_feedback(self, message_id, rating, user):
         data = {
@@ -37,7 +37,12 @@ class CompletionClient(DifyClient):
             "response_mode": response_mode,
             "user": user
         }
-        return self._send_request("POST", "/completion-messages", data, stream=True if response_mode == "streaming" else False)
+        return self._send_request(
+            "POST",
+            "/completion-messages",
+            data,
+            stream=response_mode == "streaming",
+        )
 
 
 class ChatClient(DifyClient):
@@ -51,7 +56,9 @@ class ChatClient(DifyClient):
         if conversation_id:
             data["conversation_id"] = conversation_id
 
-        return self._send_request("POST", "/chat-messages", data, stream=True if response_mode == "streaming" else False)
+        return self._send_request(
+            "POST", "/chat-messages", data, stream=response_mode == "streaming"
+        )
 
     def get_conversation_messages(self, user, conversation_id=None, first_id=None, limit=None):
         params = {"user": user}

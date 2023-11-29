@@ -22,9 +22,7 @@ class ExternalApi(Api):
         headers = Headers()
         if isinstance(e, HTTPException):
             if e.response is not None:
-                resp = e.get_response()
-                return resp
-
+                return e.get_response()
             status_code = e.code
             default_data = {
                 'code': re.sub(r'(?<!^)(?=[A-Z])', '_', type(e).__name__).lower(),
@@ -99,9 +97,8 @@ class ExternalApi(Api):
                     'message': param_value,
                     'params': param_key
                 }
-            else:
-                if 'code' not in data:
-                    data['code'] = 'unknown'
+            elif 'code' not in data:
+                data['code'] = 'unknown'
 
             resp = self.make_response(data, status_code, headers)
         else:

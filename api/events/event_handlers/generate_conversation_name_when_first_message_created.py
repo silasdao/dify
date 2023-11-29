@@ -9,9 +9,7 @@ from extensions.ext_database import db
 def handle(sender, **kwargs):
     message = sender
     conversation = kwargs.get('conversation')
-    is_first_message = kwargs.get('is_first_message')
-
-    if is_first_message:
+    if is_first_message := kwargs.get('is_first_message'):
         if conversation.mode == 'chat':
             app_model = conversation.app
             if not app_model:

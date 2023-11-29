@@ -174,12 +174,7 @@ class OpenAIEmbedding(BaseEmbedding):
 
         """
         if self.openai_api_type and self.openai_api_type == 'azure':
-            embeddings = []
-            for text in texts:
-                embeddings.append(self._get_text_embedding(text))
-
-            return embeddings
-
+            return [self._get_text_embedding(text) for text in texts]
         if self.deployment_name is not None:
             engine = self.deployment_name
         else:
@@ -187,10 +182,14 @@ class OpenAIEmbedding(BaseEmbedding):
             if key not in _TEXT_MODE_MODEL_DICT:
                 raise ValueError(f"Invalid mode, model combination: {key}")
             engine = _TEXT_MODE_MODEL_DICT[key]
-        embeddings = get_embeddings(texts, engine=engine, api_key=self.openai_api_key,
-                                    api_type=self.openai_api_type, api_version=self.openai_api_version,
-                                    api_base=self.openai_api_base)
-        return embeddings
+        return get_embeddings(
+            texts,
+            engine=engine,
+            api_key=self.openai_api_key,
+            api_type=self.openai_api_type,
+            api_version=self.openai_api_version,
+            api_base=self.openai_api_base,
+        )
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
@@ -208,7 +207,11 @@ class OpenAIEmbedding(BaseEmbedding):
             if key not in _TEXT_MODE_MODEL_DICT:
                 raise ValueError(f"Invalid mode, model combination: {key}")
             engine = _TEXT_MODE_MODEL_DICT[key]
-        embeddings = await aget_embeddings(texts, engine=engine, api_key=self.openai_api_key,
-                                           api_type=self.openai_api_type, api_version=self.openai_api_version,
-                                           api_base=self.openai_api_base)
-        return embeddings
+        return await aget_embeddings(
+            texts,
+            engine=engine,
+            api_key=self.openai_api_key,
+            api_type=self.openai_api_type,
+            api_version=self.openai_api_version,
+            api_base=self.openai_api_base,
+        )

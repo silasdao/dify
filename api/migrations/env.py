@@ -47,10 +47,7 @@ def get_metadata():
 
 
 def include_object(object, name, type_, reflected, compare_to):
-    if type_ == "foreign_key_constraint":
-        return False
-    else:
-        return True
+    return type_ != "foreign_key_constraint"
 
 
 def run_migrations_offline():

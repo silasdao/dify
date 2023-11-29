@@ -22,7 +22,12 @@ def clean_dataset_task(dataset_id: str, tenant_id: str, indexing_technique: str,
 
     Usage: clean_dataset_task.delay(dataset_id, tenant_id, indexing_technique, index_struct)
     """
-    logging.info(click.style('Start clean dataset when dataset deleted: {}'.format(dataset_id), fg='green'))
+    logging.info(
+        click.style(
+            f'Start clean dataset when dataset deleted: {dataset_id}',
+            fg='green',
+        )
+    )
     start_at = time.perf_counter()
 
     try:
@@ -72,6 +77,10 @@ def clean_dataset_task(dataset_id: str, tenant_id: str, indexing_technique: str,
 
         end_at = time.perf_counter()
         logging.info(
-            click.style('Cleaned dataset when dataset deleted: {} latency: {}'.format(dataset_id, end_at - start_at), fg='green'))
+            click.style(
+                f'Cleaned dataset when dataset deleted: {dataset_id} latency: {end_at - start_at}',
+                fg='green',
+            )
+        )
     except Exception:
         logging.exception("Cleaned dataset when dataset deleted failed")

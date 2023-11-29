@@ -138,35 +138,33 @@ class ChatStopApi(WebApiResource):
 def compact_response(response: Union[dict | Generator]) -> Response:
     if isinstance(response, dict):
         return Response(response=json.dumps(response), status=200, mimetype='application/json')
-    else:
-        def generate() -> Generator:
-            try:
-                for chunk in response:
-                    yield chunk
-            except services.errors.conversation.ConversationNotExistsError:
-                yield "data: " + json.dumps(api.handle_error(NotFound("Conversation Not Exists.")).get_json()) + "\n\n"
-            except services.errors.conversation.ConversationCompletedError:
-                yield "data: " + json.dumps(api.handle_error(ConversationCompletedError()).get_json()) + "\n\n"
-            except services.errors.app_model_config.AppModelConfigBrokenError:
-                logging.exception("App model config broken.")
-                yield "data: " + json.dumps(api.handle_error(AppUnavailableError()).get_json()) + "\n\n"
-            except ProviderTokenNotInitError:
-                yield "data: " + json.dumps(api.handle_error(ProviderNotInitializeError()).get_json()) + "\n\n"
-            except QuotaExceededError:
-                yield "data: " + json.dumps(api.handle_error(ProviderQuotaExceededError()).get_json()) + "\n\n"
-            except ModelCurrentlyNotSupportError:
-                yield "data: " + json.dumps(api.handle_error(ProviderModelCurrentlyNotSupportError()).get_json()) + "\n\n"
-            except (LLMBadRequestError, LLMAPIConnectionError, LLMAPIUnavailableError,
+    def generate() -> Generator:
+        try:
+            yield from response
+        except services.errors.conversation.ConversationNotExistsError:
+            yield "data: " + json.dumps(api.handle_error(NotFound("Conversation Not Exists.")).get_json()) + "\n\n"
+        except services.errors.conversation.ConversationCompletedError:
+            yield f"data: {json.dumps(api.handle_error(ConversationCompletedError()).get_json())}" + "\n\n"
+        except services.errors.app_model_config.AppModelConfigBrokenError:
+            logging.exception("App model config broken.")
+            yield f"data: {json.dumps(api.handle_error(AppUnavailableError()).get_json())}" + "\n\n"
+        except ProviderTokenNotInitError:
+            yield f"data: {json.dumps(api.handle_error(ProviderNotInitializeError()).get_json())}" + "\n\n"
+        except QuotaExceededError:
+            yield f"data: {json.dumps(api.handle_error(ProviderQuotaExceededError()).get_json())}" + "\n\n"
+        except ModelCurrentlyNotSupportError:
+            yield f"data: {json.dumps(api.handle_error(ProviderModelCurrentlyNotSupportError()).get_json())}" + "\n\n"
+        except (LLMBadRequestError, LLMAPIConnectionError, LLMAPIUnavailableError,
                     LLMRateLimitError, LLMAuthorizationError) as e:
-                yield "data: " + json.dumps(api.handle_error(CompletionRequestError(str(e))).get_json()) + "\n\n"
-            except ValueError as e:
-                yield "data: " + json.dumps(api.handle_error(e).get_json()) + "\n\n"
-            except Exception:
-                logging.exception("internal server error.")
-                yield "data: " + json.dumps(api.handle_error(InternalServerError()).get_json()) + "\n\n"
+            yield f"data: {json.dumps(api.handle_error(CompletionRequestError(str(e))).get_json())}" + "\n\n"
+        except ValueError as e:
+            yield f"data: {json.dumps(api.handle_error(e).get_json())}" + "\n\n"
+        except Exception:
+            logging.exception("internal server error.")
+            yield f"data: {json.dumps(api.handle_error(InternalServerError()).get_json())}" + "\n\n"
 
-        return Response(stream_with_context(generate()), status=200,
-                        mimetype='text/event-stream')
+    return Response(stream_with_context(generate()), status=200,
+                    mimetype='text/event-stream')
 
 
 api.add_resource(CompletionApi, '/completion-messages')

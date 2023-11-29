@@ -12,23 +12,20 @@ class PromptBuilder:
         prompt_template = OutLinePromptTemplate.from_template(prompt_content)
         system_prompt_template = SystemMessagePromptTemplate(prompt=prompt_template)
         prompt_inputs = {k: inputs[k] for k in system_prompt_template.input_variables if k in inputs}
-        system_message = system_prompt_template.format(**prompt_inputs)
-        return system_message
+        return system_prompt_template.format(**prompt_inputs)
 
     @classmethod
     def to_ai_message(cls, prompt_content: str, inputs: dict) -> BaseMessage:
         prompt_template = OutLinePromptTemplate.from_template(prompt_content)
         ai_prompt_template = AIMessagePromptTemplate(prompt=prompt_template)
         prompt_inputs = {k: inputs[k] for k in ai_prompt_template.input_variables if k in inputs}
-        ai_message = ai_prompt_template.format(**prompt_inputs)
-        return ai_message
+        return ai_prompt_template.format(**prompt_inputs)
 
     @classmethod
     def to_human_message(cls, prompt_content: str, inputs: dict) -> BaseMessage:
         prompt_template = OutLinePromptTemplate.from_template(prompt_content)
         human_prompt_template = HumanMessagePromptTemplate(prompt=prompt_template)
-        human_message = human_prompt_template.format(**inputs)
-        return human_message
+        return human_prompt_template.format(**inputs)
 
     @classmethod
     def process_template(cls, template: str):

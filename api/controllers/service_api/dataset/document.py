@@ -41,7 +41,7 @@ class DocumentListApi(DatasetApiResource):
 
         # user uuid as file name
         file_uuid = str(uuid.uuid4())
-        file_key = 'upload_files/' + dataset.tenant_id + '/' + file_uuid + '.txt'
+        file_key = f'upload_files/{dataset.tenant_id}/{file_uuid}.txt'
 
         # save file to storage
         storage.save(file_key, args.get('text'))

@@ -23,7 +23,9 @@ def add_segment_to_index_task(segment_id: str):
 
     Usage: add_segment_to_index.delay(segment_id)
     """
-    logging.info(click.style('Start add segment to index: {}'.format(segment_id), fg='green'))
+    logging.info(
+        click.style(f'Start add segment to index: {segment_id}', fg='green')
+    )
     start_at = time.perf_counter()
 
     segment = db.session.query(DocumentSegment).filter(DocumentSegment.id == segment_id).first()
@@ -33,19 +35,17 @@ def add_segment_to_index_task(segment_id: str):
     if segment.status != 'completed':
         return
 
-    indexing_cache_key = 'segment_{}_indexing'.format(segment.id)
+    indexing_cache_key = f'segment_{segment.id}_indexing'
 
     try:
         relationships = {
             DocumentRelationship.SOURCE: segment.document_id,
         }
 
-        previous_segment = segment.previous_segment
-        if previous_segment:
+        if previous_segment := segment.previous_segment:
             relationships[DocumentRelationship.PREVIOUS] = previous_segment.index_node_id
 
-        next_segment = segment.next_segment
-        if next_segment:
+        if next_segment := segment.next_segment:
             relationships[DocumentRelationship.NEXT] = next_segment.index_node_id
 
         node = Node(
@@ -76,7 +76,12 @@ def add_segment_to_index_task(segment_id: str):
         keyword_table_index.add_nodes([node])
 
         end_at = time.perf_counter()
-        logging.info(click.style('Segment added to index: {} latency: {}'.format(segment.id, end_at - start_at), fg='green'))
+        logging.info(
+            click.style(
+                f'Segment added to index: {segment.id} latency: {end_at - start_at}',
+                fg='green',
+            )
+        )
     except Exception as e:
         logging.exception("add segment to index failed")
         segment.enabled = False

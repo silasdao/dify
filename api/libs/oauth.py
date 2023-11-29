@@ -59,12 +59,10 @@ class GitHubOAuth(OAuth):
         response = requests.post(self._TOKEN_URL, data=data, headers=headers)
 
         response_json = response.json()
-        access_token = response_json.get('access_token')
-
-        if not access_token:
+        if access_token := response_json.get('access_token'):
+            return access_token
+        else:
             raise ValueError(f"Error in GitHub OAuth: {response_json}")
-
-        return access_token
 
     def get_raw_user_info(self, token: str):
         headers = {'Authorization': f"token {token}"}
@@ -115,12 +113,10 @@ class GoogleOAuth(OAuth):
         response = requests.post(self._TOKEN_URL, data=data, headers=headers)
 
         response_json = response.json()
-        access_token = response_json.get('access_token')
-
-        if not access_token:
+        if access_token := response_json.get('access_token'):
+            return access_token
+        else:
             raise ValueError(f"Error in Google OAuth: {response_json}")
-
-        return access_token
 
     def get_raw_user_info(self, token: str):
         headers = {'Authorization': f"Bearer {token}"}

@@ -22,19 +22,18 @@ class QdrantVectorStoreClient(BaseVectorStoreClient):
 
     @classmethod
     def init_from_config(cls, url: str, api_key: str, root_path: str):
-        if url and url.startswith('path:'):
-            path = url.replace('path:', '')
-            if not os.path.isabs(path):
-                path = os.path.join(root_path, path)
-
-            return qdrant_client.QdrantClient(
-                path=path
-            )
-        else:
+        if not url or not url.startswith('path:'):
             return qdrant_client.QdrantClient(
                 url=url,
                 api_key=api_key,
             )
+        path = url.replace('path:', '')
+        if not os.path.isabs(path):
+            path = os.path.join(root_path, path)
+
+        return qdrant_client.QdrantClient(
+            path=path
+        )
 
     def get_index(self, service_context: ServiceContext, config: dict) -> GPTVectorStoreIndex:
         index_struct = QdrantIndexDict()
@@ -42,19 +41,17 @@ class QdrantVectorStoreClient(BaseVectorStoreClient):
         if self._client is None:
             raise Exception("Vector client is not initialized.")
 
-        # {"collection_name": "Gpt_index_xxx"}
-        collection_name = config.get('collection_name')
-        if not collection_name:
-            raise Exception("collection_name cannot be None.")
-
-        return GPTQdrantEnhanceIndex(
-            service_context=service_context,
-            index_struct=index_struct,
-            vector_store=QdrantEnhanceVectorStore(
-                client=self._client,
-                collection_name=collection_name
+        if collection_name := config.get('collection_name'):
+            return GPTQdrantEnhanceIndex(
+                service_context=service_context,
+                index_struct=index_struct,
+                vector_store=QdrantEnhanceVectorStore(
+                    client=self._client,
+                    collection_name=collection_name
+                )
             )
-        )
+        else:
+            raise Exception("collection_name cannot be None.")
 
     def to_index_config(self, index_id: str) -> dict:
         return {"collection_name": index_id}

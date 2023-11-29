@@ -86,13 +86,12 @@ class DatasetDocumentSegmentListApi(Resource):
         hit_count_gte = args['hit_count_gte']
 
         query = DocumentSegment.query.filter(
-            DocumentSegment.document_id == str(document_id),
-            DocumentSegment.tenant_id == current_user.current_tenant_id
+            DocumentSegment.document_id == document_id,
+            DocumentSegment.tenant_id == current_user.current_tenant_id,
         )
 
         if last_id is not None:
-            last_segment = DocumentSegment.query.get(str(last_id))
-            if last_segment:
+            if last_segment := DocumentSegment.query.get(str(last_id)):
                 query = query.filter(
                     DocumentSegment.position > last_segment.position)
             else:
@@ -153,12 +152,12 @@ class DatasetDocumentSegmentApi(Resource):
         if not segment:
             raise NotFound('Segment not found.')
 
-        document_indexing_cache_key = 'document_{}_indexing'.format(segment.document_id)
+        document_indexing_cache_key = f'document_{segment.document_id}_indexing'
         cache_result = redis_client.get(document_indexing_cache_key)
         if cache_result is not None:
             raise InvalidActionError("Document is being indexed, please try again later")
 
-        indexing_cache_key = 'segment_{}_indexing'.format(segment.id)
+        indexing_cache_key = f'segment_{segment.id}_indexing'
         cache_result = redis_client.get(indexing_cache_key)
         if cache_result is not None:
             raise InvalidActionError("Segment is being indexed, please try again later")

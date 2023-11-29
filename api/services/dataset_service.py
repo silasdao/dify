@@ -45,13 +45,13 @@ class DatasetService:
 
     @staticmethod
     def get_process_rules(dataset_id):
-        # get the latest process rule
-        dataset_process_rule = db.session.query(DatasetProcessRule). \
-            filter(DatasetProcessRule.dataset_id == dataset_id). \
-            order_by(DatasetProcessRule.created_at.desc()). \
-            limit(1). \
-            one_or_none()
-        if dataset_process_rule:
+        if (
+            dataset_process_rule := db.session.query(DatasetProcessRule)
+            .filter(DatasetProcessRule.dataset_id == dataset_id)
+            .order_by(DatasetProcessRule.created_at.desc())
+            .limit(1)
+            .one_or_none()
+        ):
             mode = dataset_process_rule.mode
             rules = dataset_process_rule.rules_dict
         else:
@@ -90,10 +90,7 @@ class DatasetService:
         dataset = Dataset.query.filter_by(
             id=dataset_id
         ).first()
-        if dataset is None:
-            return None
-        else:
-            return dataset
+        return None if dataset is None else dataset
 
     @staticmethod
     def update_dataset(dataset_id, data, user):
@@ -270,34 +267,29 @@ class DocumentService:
 
     @staticmethod
     def get_document(dataset_id: str, document_id: str) -> Optional[Document]:
-        document = db.session.query(Document).filter(
-            Document.id == document_id,
-            Document.dataset_id == dataset_id
-        ).first()
-
-        return document
+        return (
+            db.session.query(Document)
+            .filter(Document.id == document_id, Document.dataset_id == dataset_id)
+            .first()
+        )
 
     @staticmethod
     def get_document_by_id(document_id: str) -> Optional[Document]:
-        document = db.session.query(Document).filter(
-            Document.id == document_id
-        ).first()
-
-        return document
+        return (
+            db.session.query(Document).filter(Document.id == document_id).first()
+        )
 
     @staticmethod
     def get_document_file_detail(file_id: str):
-        file_detail = db.session.query(UploadFile). \
-            filter(UploadFile.id == file_id). \
-            one_or_none()
-        return file_detail
+        return (
+            db.session.query(UploadFile)
+            .filter(UploadFile.id == file_id)
+            .one_or_none()
+        )
 
     @staticmethod
     def check_archived(document):
-        if document.archived:
-            return True
-        else:
-            return False
+        return bool(document.archived)
 
     @staticmethod
     def delete_document(document):
@@ -322,7 +314,7 @@ class DocumentService:
         db.session.add(document)
         db.session.commit()
         # set document paused flag
-        indexing_cache_key = 'document_{}_is_paused'.format(document.id)
+        indexing_cache_key = f'document_{document.id}_is_paused'
         redis_client.setnx(indexing_cache_key, "True")
 
     @staticmethod
@@ -337,15 +329,14 @@ class DocumentService:
         db.session.add(document)
         db.session.commit()
         # delete paused flag
-        indexing_cache_key = 'document_{}_is_paused'.format(document.id)
+        indexing_cache_key = f'document_{document.id}_is_paused'
         redis_client.delete(indexing_cache_key)
         # trigger async task
         document_indexing_task.delay(document.dataset_id, document.id)
 
     @staticmethod
     def get_documents_position(dataset_id):
-        documents = Document.query.filter_by(dataset_id=dataset_id).all()
-        if documents:
+        if documents := Document.query.filter_by(dataset_id=dataset_id).all():
             return len(documents) + 1
         else:
             return 1
@@ -517,8 +508,12 @@ class DocumentService:
 
         cut_length = 18
         cut_name = document.name[:cut_length]
-        dataset.name = cut_name + '...' if len(document.name) > cut_length else cut_name
-        dataset.description = 'useful for when you want to answer queries about the ' + document.name
+        dataset.name = (
+            f'{cut_name}...' if len(document.name) > cut_length else cut_name
+        )
+        dataset.description = (
+            f'useful for when you want to answer queries about the {document.name}'
+        )
         db.session.commit()
 
         return dataset, document
@@ -529,14 +524,17 @@ class DocumentService:
             DocumentService.data_source_args_validate(args)
             DocumentService.process_rule_args_validate(args)
         else:
-            if ('data_source' not in args and not args['data_source'])\
-                    and ('process_rule' not in args and not args['process_rule']):
+            if (
+                'data_source' not in args
+                and not args['data_source']
+                and 'process_rule' not in args
+                and not args['process_rule']
+            ):
                 raise ValueError("Data source or Process rule is required")
-            else:
-                if 'data_source' in args and args['data_source']:
-                    DocumentService.data_source_args_validate(args)
-                if 'process_rule' in args and args['process_rule']:
-                    DocumentService.process_rule_args_validate(args)
+            if 'data_source' in args and args['data_source']:
+                DocumentService.data_source_args_validate(args)
+            if 'process_rule' in args and args['process_rule']:
+                DocumentService.process_rule_args_validate(args)
 
     @classmethod
     def data_source_args_validate(cls, args: dict):

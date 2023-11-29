@@ -54,11 +54,10 @@ class LLMRouterChain(Chain):
         self,
         inputs: Dict[str, Any]
     ) -> Dict[str, Any]:
-        output = cast(
+        return cast(
             Dict[str, Any],
             self.llm_chain.predict_and_parse(**inputs),
         )
-        return output
 
     @classmethod
     def from_llm(

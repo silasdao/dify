@@ -14,16 +14,16 @@ class LLMProviderService:
         self.provider = self.init_provider(tenant_id, provider_name)
 
     def init_provider(self, tenant_id: str, provider_name: str) -> BaseProvider:
-        if provider_name == 'openai':
-            return OpenAIProvider(tenant_id)
+        if provider_name == 'anthropic':
+            return AnthropicProvider(tenant_id)
         elif provider_name == 'azure_openai':
             return AzureProvider(tenant_id)
-        elif provider_name == 'anthropic':
-            return AnthropicProvider(tenant_id)
         elif provider_name == 'huggingface':
             return HuggingfaceProvider(tenant_id)
+        elif provider_name == 'openai':
+            return OpenAIProvider(tenant_id)
         else:
-            raise Exception('provider {} not found'.format(provider_name))
+            raise Exception(f'provider {provider_name} not found')
 
     def get_models(self, model_id: Optional[str] = None) -> list[dict]:
         return self.provider.get_models(model_id)

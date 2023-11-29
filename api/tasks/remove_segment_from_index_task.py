@@ -20,7 +20,11 @@ def remove_segment_from_index_task(segment_id: str):
 
     Usage: remove_segment_from_index.delay(segment_id)
     """
-    logging.info(click.style('Start remove segment from index: {}'.format(segment_id), fg='green'))
+    logging.info(
+        click.style(
+            f'Start remove segment from index: {segment_id}', fg='green'
+        )
+    )
     start_at = time.perf_counter()
 
     segment = db.session.query(DocumentSegment).filter(DocumentSegment.id == segment_id).first()
@@ -30,7 +34,7 @@ def remove_segment_from_index_task(segment_id: str):
     if segment.status != 'completed':
         return
 
-    indexing_cache_key = 'segment_{}_indexing'.format(segment.id)
+    indexing_cache_key = f'segment_{segment.id}_indexing'
 
     try:
         dataset = segment.dataset
@@ -49,7 +53,12 @@ def remove_segment_from_index_task(segment_id: str):
         keyword_table_index.del_nodes([segment.index_node_id])
 
         end_at = time.perf_counter()
-        logging.info(click.style('Segment removed from index: {} latency: {}'.format(segment.id, end_at - start_at), fg='green'))
+        logging.info(
+            click.style(
+                f'Segment removed from index: {segment.id} latency: {end_at - start_at}',
+                fg='green',
+            )
+        )
     except Exception:
         logging.exception("remove segment from index failed")
         segment.enabled = True

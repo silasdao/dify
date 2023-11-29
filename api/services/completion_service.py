@@ -353,9 +353,8 @@ class CompletionService:
             if variable not in user_inputs or not user_inputs[variable]:
                 if "required" in input_config and input_config["required"]:
                     raise ValueError(f"{variable} is required in input form")
-                else:
-                    filtered_inputs[variable] = input_config["default"] if "default" in input_config else ""
-                    continue
+                filtered_inputs[variable] = input_config["default"] if "default" in input_config else ""
+                continue
 
             value = user_inputs[variable]
 
@@ -363,11 +362,10 @@ class CompletionService:
                 options = input_config["options"] if "options" in input_config else []
                 if value not in options:
                     raise ValueError(f"{variable} in input form must be one of the following: {options}")
-            else:
-                if 'max_length' in variable:
-                    max_length = variable['max_length']
-                    if len(value) > max_length:
-                        raise ValueError(f'{variable} in input form must be less than {max_length} characters')
+            elif 'max_length' in variable:
+                max_length = variable['max_length']
+                if len(value) > max_length:
+                    raise ValueError(f'{variable} in input form must be less than {max_length} characters')
 
             filtered_inputs[variable] = value
 
@@ -387,11 +385,10 @@ class CompletionService:
 
                         return cls.get_message_response_data(result.get('data'))
             except ValueError as e:
-                if e.args[0] != "I/O operation on closed file.":  # ignore this error
+                if e.args[0] != "I/O operation on closed file.":
                     raise CompletionStoppedError()
-                else:
-                    logging.exception(e)
-                    raise
+                logging.exception(e)
+                raise
             finally:
                 try:
                     pubsub.unsubscribe(generate_channel)

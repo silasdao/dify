@@ -45,10 +45,7 @@ class LLMBuilder:
             else:
                 llm_cls = StreamableAzureChatOpenAI
         elif mode == 'completion':
-            if provider == 'openai':
-                llm_cls = StreamableOpenAI
-            else:
-                llm_cls = StreamableAzureOpenAI
+            llm_cls = StreamableOpenAI if provider == 'openai' else StreamableAzureOpenAI
         else:
             raise ValueError(f"model name {model_name} is not supported.")
 
@@ -88,7 +85,7 @@ class LLMBuilder:
     @classmethod
     def get_mode_by_model(cls, model_name: str) -> str:
         if not model_name:
-            raise ValueError(f"empty model name is not supported.")
+            raise ValueError("empty model name is not supported.")
 
         if model_name in llm_constant.models_by_mode['chat']:
             return "chat"

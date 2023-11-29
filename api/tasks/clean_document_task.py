@@ -19,7 +19,12 @@ def clean_document_task(document_id: str, dataset_id: str):
 
     Usage: clean_document_task.delay(document_id, dataset_id)
     """
-    logging.info(click.style('Start clean document when document deleted: {}'.format(document_id), fg='green'))
+    logging.info(
+        click.style(
+            f'Start clean document when document deleted: {document_id}',
+            fg='green',
+        )
+    )
     start_at = time.perf_counter()
 
     try:
@@ -46,6 +51,10 @@ def clean_document_task(document_id: str, dataset_id: str):
 
         end_at = time.perf_counter()
         logging.info(
-            click.style('Cleaned document when document deleted: {} latency: {}'.format(document_id, end_at - start_at), fg='green'))
+            click.style(
+                f'Cleaned document when document deleted: {document_id} latency: {end_at - start_at}',
+                fg='green',
+            )
+        )
     except Exception:
         logging.exception("Cleaned document when document deleted failed")

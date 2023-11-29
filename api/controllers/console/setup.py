@@ -21,12 +21,11 @@ class SetupApi(Resource):
 
     @only_edition_self_hosted
     def get(self):
-        setup_status = get_setup_status()
-        if setup_status:
+        if setup_status := get_setup_status():
             return {
                 'step': 'finished',
                 'setup_at': setup_status.setup_at.isoformat()
-            }  
+            }
         return {'step': 'not_start'}
 
     @only_edition_self_hosted

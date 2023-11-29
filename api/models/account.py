@@ -46,8 +46,9 @@ class Account(UserMixin, db.Model):
     @current_tenant.setter
     def current_tenant(self, value):
         tenant = value
-        ta = TenantAccountJoin.query.filter_by(tenant_id=tenant.id, account_id=self.id).first()
-        if ta:
+        if ta := TenantAccountJoin.query.filter_by(
+            tenant_id=tenant.id, account_id=self.id
+        ).first():
             tenant.current_role = ta.role
         else:
             tenant = None
@@ -60,13 +61,13 @@ class Account(UserMixin, db.Model):
     @current_tenant_id.setter
     def current_tenant_id(self, value):
         try:
-            tenant_account_join = db.session.query(Tenant, TenantAccountJoin) \
-                .filter(Tenant.id == value) \
-                .filter(TenantAccountJoin.tenant_id == Tenant.id) \
-                .filter(TenantAccountJoin.account_id == self.id) \
+            if (
+                tenant_account_join := db.session.query(Tenant, TenantAccountJoin)
+                .filter(Tenant.id == value)
+                .filter(TenantAccountJoin.tenant_id == Tenant.id)
+                .filter(TenantAccountJoin.account_id == self.id)
                 .one_or_none()
-
-            if tenant_account_join:
+            ):
                 tenant, ta = tenant_account_join
                 tenant.current_role = ta.role
             else:
@@ -82,13 +83,17 @@ class Account(UserMixin, db.Model):
 
     @classmethod
     def get_by_openid(cls, provider: str, open_id: str) -> db.Model:
-        account_integrate = db.session.query(AccountIntegrate). \
-            filter(AccountIntegrate.provider == provider, AccountIntegrate.open_id == open_id). \
-            one_or_none()
-        if account_integrate:
+        if (
+            account_integrate := db.session.query(AccountIntegrate)
+            .filter(
+                AccountIntegrate.provider == provider,
+                AccountIntegrate.open_id == open_id,
+            )
+            .one_or_none()
+        ):
             return db.session.query(Account). \
-                filter(Account.id == account_integrate.account_id). \
-                one_or_none()
+                    filter(Account.id == account_integrate.account_id). \
+                    one_or_none()
         return None
 
     def get_integrates(self) -> List[db.Model]:

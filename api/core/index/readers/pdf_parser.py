@@ -26,7 +26,7 @@ class PDFParser(BaseParser):
         if self._parser_config and 'upload_file' in self._parser_config and self._parser_config['upload_file']:
             upload_file: UploadFile = self._parser_config['upload_file']
             if upload_file.hash:
-                plaintext_file_key = 'upload_files/' + upload_file.tenant_id + '/' + upload_file.hash + '.plaintext'
+                plaintext_file_key = f'upload_files/{upload_file.tenant_id}/{upload_file.hash}.plaintext'
                 try:
                     text = storage.load(plaintext_file_key).decode('utf-8')
                     plaintext_file_exists = True

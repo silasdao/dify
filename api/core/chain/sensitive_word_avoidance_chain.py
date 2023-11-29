@@ -31,10 +31,14 @@ class SensitiveWordAvoidanceChain(Chain):
         return [self.output_key]
 
     def _check_sensitive_word(self, text: str) -> str:
-        for word in self.sensitive_words:
-            if word in text:
-                return self.canned_response
-        return text
+        return next(
+            (
+                self.canned_response
+                for word in self.sensitive_words
+                if word in text
+            ),
+            text,
+        )
 
     def _call(self, inputs: Dict[str, str]) -> Dict[str, str]:
         text = inputs[self.input_key]

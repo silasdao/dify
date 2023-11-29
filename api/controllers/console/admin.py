@@ -57,20 +57,32 @@ class InsertExploreAppListApi(Resource):
         if not app:
             raise NotFound('App not found')
 
-        site = app.site
-        if not site:
-            desc = args['desc'] if args['desc'] else ''
-            copy_right = args['copyright'] if args['copyright'] else ''
-            privacy_policy = args['privacy_policy'] if args['privacy_policy'] else ''
-        else:
+        if site := app.site:
             desc = site.description if (site.description if not args['desc'] else args['desc']) else ''
             copy_right = site.copyright if (site.copyright if not args['copyright'] else args['copyright']) else ''
             privacy_policy = site.privacy_policy \
-                if (site.privacy_policy if not args['privacy_policy'] else args['privacy_policy']) else ''
+                    if (site.privacy_policy if not args['privacy_policy'] else args['privacy_policy']) else ''
 
-        recommended_app = RecommendedApp.query.filter(RecommendedApp.app_id == args['app_id']).first()
+        else:
+            desc = args['desc'] if args['desc'] else ''
+            copy_right = args['copyright'] if args['copyright'] else ''
+            privacy_policy = args['privacy_policy'] if args['privacy_policy'] else ''
+        if recommended_app := RecommendedApp.query.filter(
+            RecommendedApp.app_id == args['app_id']
+        ).first():
+            recommended_app.description = desc
+            recommended_app.copyright = copy_right
+            recommended_app.privacy_policy = privacy_policy
+            recommended_app.language = args['language']
+            recommended_app.category = args['category']
+            recommended_app.position = args['position']
 
-        if not recommended_app:
+            app.is_public = True
+
+            db.session.commit()
+
+            return {'result': 'success'}, 200
+        else:
             recommended_app = RecommendedApp(
                 app_id=app.id,
                 description=desc,
@@ -87,19 +99,6 @@ class InsertExploreAppListApi(Resource):
             db.session.commit()
 
             return {'result': 'success'}, 201
-        else:
-            recommended_app.description = desc
-            recommended_app.copyright = copy_right
-            recommended_app.privacy_policy = privacy_policy
-            recommended_app.language = args['language']
-            recommended_app.category = args['category']
-            recommended_app.position = args['position']
-
-            app.is_public = True
-
-            db.session.commit()
-
-            return {'result': 'success'}, 200
 
 
 class InsertExploreAppApi(Resource):
@@ -110,8 +109,7 @@ class InsertExploreAppApi(Resource):
         if not recommended_app:
             return {'result': 'success'}, 204
 
-        app = App.query.filter(App.id == recommended_app.app_id).first()
-        if app:
+        if app := App.query.filter(App.id == recommended_app.app_id).first():
             app.is_public = False
 
         installed_apps = InstalledApp.query.filter(

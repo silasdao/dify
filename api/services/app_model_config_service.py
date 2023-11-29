@@ -13,13 +13,7 @@ class AppModelConfigService:
         # verify if the dataset ID exists
         dataset = DatasetService.get_dataset(dataset_id)
 
-        if not dataset:
-            return False
-
-        if dataset.tenant_id != account.current_tenant_id:
-            return False
-
-        return True
+        return False if not dataset else dataset.tenant_id == account.current_tenant_id
 
     @staticmethod
     def validate_model_completion_params(cp: dict, model_name: str) -> dict:
@@ -32,7 +26,7 @@ class AppModelConfigService:
             cp["max_tokens"] = 512
 
         if not isinstance(cp["max_tokens"], int) or cp["max_tokens"] <= 0 or cp["max_tokens"] > \
-                llm_constant.max_context_token_length[model_name]:
+                    llm_constant.max_context_token_length[model_name]:
             raise ValueError(
                 "max_tokens must be an integer greater than 0 and not exceeding the maximum value of the corresponding model")
 
@@ -64,16 +58,13 @@ class AppModelConfigService:
         if not isinstance(cp["frequency_penalty"], (float, int)) or cp["frequency_penalty"] < -2 or cp["frequency_penalty"] > 2:
             raise ValueError("frequency_penalty must be a float between -2 and 2")
 
-        # Filter out extra parameters
-        filtered_cp = {
+        return {
             "max_tokens": cp["max_tokens"],
             "temperature": cp["temperature"],
             "top_p": cp["top_p"],
             "presence_penalty": cp["presence_penalty"],
-            "frequency_penalty": cp["frequency_penalty"]
+            "frequency_penalty": cp["frequency_penalty"],
         }
-
-        return filtered_cp
 
     @staticmethod
     def validate_configuration(account: Account, config: dict, mode: str) -> dict:
@@ -199,7 +190,7 @@ class AppModelConfigService:
                     raise ValueError("options in user_input_form must be a list of strings")
 
                 if "default" in form_item and form_item['default'] \
-                        and form_item["default"] not in form_item["options"]:
+                            and form_item["default"] not in form_item["options"]:
                     raise ValueError("default value in user_input_form must be in the options list")
 
         # pre_prompt
@@ -273,20 +264,19 @@ class AppModelConfigService:
                 if not AppModelConfigService.is_dataset_exists(account, tool_item["id"]):
                     raise ValueError("Dataset ID does not exist, please check your permission.")
 
-        # Filter out extra parameters
-        filtered_config = {
+        return {
             "opening_statement": config["opening_statement"],
             "suggested_questions": config["suggested_questions"],
-            "suggested_questions_after_answer": config["suggested_questions_after_answer"],
+            "suggested_questions_after_answer": config[
+                "suggested_questions_after_answer"
+            ],
             "more_like_this": config["more_like_this"],
             "model": {
                 "provider": config["model"]["provider"],
                 "name": config["model"]["name"],
-                "completion_params": config["model"]["completion_params"]
+                "completion_params": config["model"]["completion_params"],
             },
             "user_input_form": config["user_input_form"],
             "pre_prompt": config["pre_prompt"],
-            "agent_mode": config["agent_mode"]
+            "agent_mode": config["agent_mode"],
         }
-
-        return filtered_config

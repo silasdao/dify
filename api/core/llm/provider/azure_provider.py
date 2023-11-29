@@ -12,10 +12,7 @@ from models.provider import ProviderName
 class AzureProvider(BaseProvider):
     def get_models(self, model_id: Optional[str] = None, credentials: Optional[dict] = None) -> list[dict]:
         credentials = self.get_credentials(model_id) if not credentials else credentials
-        url = "{}/openai/deployments?api-version={}".format(
-            str(credentials.get('openai_api_base')),
-            str(credentials.get('openai_api_version'))
-        )
+        url = f"{str(credentials.get('openai_api_base'))}/openai/deployments?api-version={str(credentials.get('openai_api_version'))}"
 
         headers = {
             "api-key": str(credentials.get('openai_api_key')),
@@ -26,15 +23,21 @@ class AzureProvider(BaseProvider):
 
         if response.status_code == 200:
             result = response.json()
-            return [{
-                'id': deployment['id'],
-                'name': '{} ({})'.format(deployment['id'], deployment['model'])
-            } for deployment in result['data'] if deployment['status'] == 'succeeded']
+            return [
+                {
+                    'id': deployment['id'],
+                    'name': f"{deployment['id']} ({deployment['model']})",
+                }
+                for deployment in result['data']
+                if deployment['status'] == 'succeeded'
+            ]
         else:
             if response.status_code == 401:
                 raise AzureAuthenticationError()
             else:
-                raise AzureRequestFailedError('Failed to request Azure OpenAI. Status code: {}'.format(response.status_code))
+                raise AzureRequestFailedError(
+                    f'Failed to request Azure OpenAI. Status code: {response.status_code}'
+                )
 
     def get_credentials(self, model_id: Optional[str] = None) -> dict:
         """
@@ -105,11 +108,14 @@ class AzureProvider(BaseProvider):
 
             current_model_ids = [model['id'] for model in models]
 
-            missing_model_ids = [fixed_model_id for fixed_model_id in fixed_model_ids if
-                                 fixed_model_id not in current_model_ids]
-
-            if missing_model_ids:
-                raise ValidateFailedError("Please add deployments for '{}'.".format(", ".join(missing_model_ids)))
+            if missing_model_ids := [
+                fixed_model_id
+                for fixed_model_id in fixed_model_ids
+                if fixed_model_id not in current_model_ids
+            ]:
+                raise ValidateFailedError(
+                    f"""Please add deployments for '{", ".join(missing_model_ids)}'."""
+                )
         except ValidateFailedError as e:
             raise e
         except AzureAuthenticationError:
@@ -117,10 +123,10 @@ class AzureProvider(BaseProvider):
         except (requests.ConnectionError, requests.RequestException):
             raise ValidateFailedError('Validation failed, please check your API Base Endpoint.')
         except AzureRequestFailedError as ex:
-            raise ValidateFailedError('Validation failed, error: {}.'.format(str(ex)))
+            raise ValidateFailedError(f'Validation failed, error: {str(ex)}.')
         except Exception as ex:
             logging.exception('Azure OpenAI Credentials validation failed')
-            raise ValidateFailedError('Validation failed, error: {}.'.format(str(ex)))
+            raise ValidateFailedError(f'Validation failed, error: {str(ex)}.')
 
     def get_encrypted_token(self, config: Union[dict | str]):
         """

@@ -68,10 +68,7 @@ class Completion:
             conversation_message_task=conversation_message_task
         )
 
-        chain_output = ''
-        if main_chain:
-            chain_output = main_chain.run(query)
-
+        chain_output = main_chain.run(query) if main_chain else ''
         # run the final llm
         try:
             cls.run_final_llm(
@@ -123,18 +120,15 @@ class Completion:
             mode=mode
         )
 
-        response = final_llm.generate([prompt], stop_words)
-
-        return response
+        return final_llm.generate([prompt], stop_words)
 
     @classmethod
     def get_main_llm_prompt(cls, mode: str, llm: BaseLanguageModel, pre_prompt: str, query: str, inputs: dict,
                             chain_output: Optional[str],
-                            memory: Optional[ReadOnlyConversationTokenDBBufferSharedMemory]) -> \
-            Tuple[Union[str | List[BaseMessage]], Optional[List[str]]]:
-        # disable template string in query
-        query_params = OutLinePromptTemplate.from_template(template=query).input_variables
-        if query_params:
+                            memory: Optional[ReadOnlyConversationTokenDBBufferSharedMemory]) -> Tuple[Union[str | List[BaseMessage]], Optional[List[str]]]:
+        if query_params := OutLinePromptTemplate.from_template(
+            template=query
+        ).input_variables:
             for query_param in query_params:
                 if query_param not in inputs:
                     inputs[query_param] = '{' + query_param + '}'
@@ -159,8 +153,9 @@ And answer according to the language of the user's question.
 
             if chain_output:
                 inputs['context'] = chain_output
-                context_params = OutLinePromptTemplate.from_template(template=chain_output).input_variables
-                if context_params:
+                if context_params := OutLinePromptTemplate.from_template(
+                    template=chain_output
+                ).input_variables:
                     for context_param in context_params:
                         if context_param not in inputs:
                             inputs[context_param] = '{' + context_param + '}'
@@ -186,11 +181,13 @@ And answer according to the language of the user's question.
             human_message_prompt = ""
 
             if pre_prompt:
-                pre_prompt_inputs = {k: inputs[k] for k in
-                                     OutLinePromptTemplate.from_template(template=pre_prompt).input_variables
-                                     if k in inputs}
-
-                if pre_prompt_inputs:
+                if pre_prompt_inputs := {
+                    k: inputs[k]
+                    for k in OutLinePromptTemplate.from_template(
+                        template=pre_prompt
+                    ).input_variables
+                    if k in inputs
+                }:
                     human_inputs.update(pre_prompt_inputs)
 
             if chain_output:
@@ -221,13 +218,13 @@ And answer according to the language of the user's question.
 
                 curr_message_tokens = memory.llm.get_messages_tokens([tmp_human_message])
                 rest_tokens = llm_constant.max_context_token_length[memory.llm.model_name] \
-                              - memory.llm.max_tokens - curr_message_tokens
+                                  - memory.llm.max_tokens - curr_message_tokens
                 rest_tokens = max(rest_tokens, 0)
                 histories = cls.get_history_messages_from_memory(memory, rest_tokens)
 
-                # disable template string in query
-                histories_params = OutLinePromptTemplate.from_template(template=histories).input_variables
-                if histories_params:
+                if histories_params := OutLinePromptTemplate.from_template(
+                    template=histories
+                ).input_variables:
                     for histories_param in histories_params:
                         if histories_param not in human_inputs:
                             human_inputs[histories_param] = '{' + histories_param + '}'
@@ -278,8 +275,7 @@ And answer according to the language of the user's question.
             model=app_model_config.model_dict
         )
 
-        # use llm config from conversation
-        memory = ReadOnlyConversationTokenDBBufferSharedMemory(
+        return ReadOnlyConversationTokenDBBufferSharedMemory(
             conversation=conversation,
             llm=memory_llm,
             max_token_limit=kwargs.get("max_token_limit", 2048),
@@ -289,8 +285,6 @@ And answer according to the language of the user's question.
             output_key=kwargs.get("output_key", "output"),
             message_limit=kwargs.get("message_limit", 10),
         )
-
-        return memory
 
     @classmethod
     def validate_query_tokens(cls, tenant_id: str, app_model_config: AppModelConfig, query: str):
@@ -356,8 +350,8 @@ And answer according to the language of the user's question.
             user=user,
             inputs=message.inputs,
             query=message.query,
-            is_override=True if message.override_model_configs else False,
-            streaming=streaming
+            is_override=bool(message.override_model_configs),
+            streaming=streaming,
         )
 
         llm.callback_manager = cls.get_llm_callback_manager(llm, streaming, conversation_message_task)

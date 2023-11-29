@@ -264,8 +264,7 @@ class DatasetRelatedAppListApi(Resource):
 
         related_apps = []
         for app_dataset_join in app_dataset_joins:
-            app_model = app_dataset_join.app
-            if app_model:
+            if app_model := app_dataset_join.app:
                 related_apps.append(app_model)
 
         return {

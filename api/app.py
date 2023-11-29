@@ -52,11 +52,10 @@ def create_app(test_config=None) -> Flask:
 
     if test_config:
         app.config.from_object(test_config)
+    elif config_type == "CLOUD":
+        app.config.from_object(CloudEditionConfig())
     else:
-        if config_type == "CLOUD":
-            app.config.from_object(CloudEditionConfig())
-        else:
-            app.config.from_object(Config())
+        app.config.from_object(Config())
 
     app.secret_key = app.config['SECRET_KEY']
 
@@ -89,45 +88,46 @@ def initialize_extensions(app):
 @login_manager.user_loader
 def load_user(user_id):
     """Load user based on the user_id."""
-    if request.blueprint == 'console':
-        # Check if the user_id contains a dot, indicating the old format
-        if '.' in user_id:
-            tenant_id, account_id = user_id.split('.')
-        else:
-            account_id = user_id
-
-        account = db.session.query(Account).filter(Account.id == account_id).first()
-
-        if account:
-            workspace_id = session.get('workspace_id')
-            if workspace_id:
-                tenant_account_join = db.session.query(TenantAccountJoin).filter(
-                    TenantAccountJoin.account_id == account.id,
-                    TenantAccountJoin.tenant_id == workspace_id
-                ).first()
-
-                if not tenant_account_join:
-                    tenant_account_join = db.session.query(TenantAccountJoin).filter(
-                        TenantAccountJoin.account_id == account.id).first()
-
-                    if tenant_account_join:
-                        account.current_tenant_id = tenant_account_join.tenant_id
-                        session['workspace_id'] = account.current_tenant_id
-                else:
-                    account.current_tenant_id = workspace_id
-            else:
-                tenant_account_join = db.session.query(TenantAccountJoin).filter(
-                    TenantAccountJoin.account_id == account.id).first()
-                if tenant_account_join:
-                    account.current_tenant_id = tenant_account_join.tenant_id
-                    session['workspace_id'] = account.current_tenant_id
-
-            # Log in the user with the updated user_id
-            flask_login.login_user(account, remember=True)
-
-        return account
-    else:
+    if request.blueprint != 'console':
         return None
+    # Check if the user_id contains a dot, indicating the old format
+    if '.' in user_id:
+        tenant_id, account_id = user_id.split('.')
+    else:
+        account_id = user_id
+
+    account = db.session.query(Account).filter(Account.id == account_id).first()
+
+    if account:
+        if workspace_id := session.get('workspace_id'):
+            if (
+                tenant_account_join := db.session.query(TenantAccountJoin)
+                .filter(
+                    TenantAccountJoin.account_id == account.id,
+                    TenantAccountJoin.tenant_id == workspace_id,
+                )
+                .first()
+            ):
+                account.current_tenant_id = workspace_id
+            elif (
+                tenant_account_join := db.session.query(TenantAccountJoin)
+                .filter(TenantAccountJoin.account_id == account.id)
+                .first()
+            ):
+                account.current_tenant_id = tenant_account_join.tenant_id
+                session['workspace_id'] = account.current_tenant_id
+        elif (
+            tenant_account_join := db.session.query(TenantAccountJoin)
+            .filter(TenantAccountJoin.account_id == account.id)
+            .first()
+        ):
+            account.current_tenant_id = tenant_account_join.tenant_id
+            session['workspace_id'] = account.current_tenant_id
+
+        # Log in the user with the updated user_id
+        flask_login.login_user(account, remember=True)
+
+    return account
 
 
 @login_manager.unauthorized_handler

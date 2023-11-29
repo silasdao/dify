@@ -17,6 +17,6 @@ def _get_app(app_id, mode=None):
         raise NotFound("App not found")
 
     if mode and app.mode != mode:
-        raise NotFound("The {} app not found".format(mode))
+        raise NotFound(f"The {mode} app not found")
 
     return app

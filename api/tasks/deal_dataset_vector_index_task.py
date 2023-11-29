@@ -17,7 +17,11 @@ def deal_dataset_vector_index_task(dataset_id: str, action: str):
     :param action: action
     Usage: deal_dataset_vector_index_task.delay(dataset_id, action)
     """
-    logging.info(click.style('Start deal dataset vector index: {}'.format(dataset_id), fg='green'))
+    logging.info(
+        click.style(
+            f'Start deal dataset vector index: {dataset_id}', fg='green'
+        )
+    )
     start_at = time.perf_counter()
 
     try:
@@ -26,8 +30,7 @@ def deal_dataset_vector_index_task(dataset_id: str, action: str):
         ).first()
         if not dataset:
             raise Exception('Dataset not found')
-        documents = Document.query.filter_by(dataset_id=dataset_id).all()
-        if documents:
+        if documents := Document.query.filter_by(dataset_id=dataset_id).all():
             vector_index = VectorIndex(dataset=dataset)
             for document in documents:
                 # delete from vector index
@@ -70,6 +73,10 @@ def deal_dataset_vector_index_task(dataset_id: str, action: str):
 
         end_at = time.perf_counter()
         logging.info(
-            click.style('Deal dataset vector index: {} latency: {}'.format(dataset_id, end_at - start_at), fg='green'))
+            click.style(
+                f'Deal dataset vector index: {dataset_id} latency: {end_at - start_at}',
+                fg='green',
+            )
+        )
     except Exception:
         logging.exception("Deal dataset vector index failed")

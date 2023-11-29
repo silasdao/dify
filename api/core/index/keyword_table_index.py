@@ -75,11 +75,13 @@ class KeywordTableIndex:
         )
 
         dataset_keyword_table = self.get_keyword_table()
-        if not dataset_keyword_table or not dataset_keyword_table.keyword_table_dict:
+        if (
+            not dataset_keyword_table
+            or not dataset_keyword_table.keyword_table_dict
+        ):
             return
-        else:
-            index_struct_dict = dataset_keyword_table.keyword_table_dict
-            index_struct: KeywordTable = load_index_struct_from_dict(index_struct_dict)
+        index_struct_dict = dataset_keyword_table.keyword_table_dict
+        index_struct: KeywordTable = load_index_struct_from_dict(index_struct_dict)
 
         # create index
         index = GPTJIEBAKeywordTableIndex(
@@ -123,13 +125,15 @@ class KeywordTableIndex:
         return GPTJIEBAKeywordTableIndex(index_struct=index_struct, docstore=docstore, service_context=service_context)
 
     def get_keyword_table(self):
-        dataset_keyword_table = self._dataset.dataset_keyword_table
-        if dataset_keyword_table:
+        if dataset_keyword_table := self._dataset.dataset_keyword_table:
             return dataset_keyword_table
         return None
 
     def update_segment_keywords(self, node_id: str, keywords: List[str]):
-        document_segment = db.session.query(DocumentSegment).filter(DocumentSegment.index_node_id == node_id).first()
-        if document_segment:
+        if (
+            document_segment := db.session.query(DocumentSegment)
+            .filter(DocumentSegment.index_node_id == node_id)
+            .first()
+        ):
             document_segment.keywords = keywords
             db.session.commit()

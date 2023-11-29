@@ -91,8 +91,7 @@ class GetProcessRuleApi(Resource):
     def get(self):
         req_data = request.args
 
-        document_id = req_data.get('document_id')
-        if document_id:
+        if document_id := req_data.get('document_id'):
             # get the latest process rule
             document = Document.query.get_or_404(document_id)
 
@@ -108,10 +107,10 @@ class GetProcessRuleApi(Resource):
 
             # get the latest process rule
             dataset_process_rule = db.session.query(DatasetProcessRule). \
-                filter(DatasetProcessRule.dataset_id == document.dataset_id). \
-                order_by(DatasetProcessRule.created_at.desc()). \
-                limit(1). \
-                one_or_none()
+                    filter(DatasetProcessRule.dataset_id == document.dataset_id). \
+                    order_by(DatasetProcessRule.created_at.desc()). \
+                    limit(1). \
+                    one_or_none()
             mode = dataset_process_rule.mode
             rules = dataset_process_rule.rules_dict
         else:
@@ -145,7 +144,8 @@ class DatasetDocumentListApi(Resource):
             raise Forbidden(str(e))
 
         query = Document.query.filter_by(
-            dataset_id=str(dataset_id), tenant_id=current_user.current_tenant_id)
+            dataset_id=dataset_id, tenant_id=current_user.current_tenant_id
+        )
 
         if search:
             search = f'%{search}%'
@@ -160,11 +160,11 @@ class DatasetDocumentListApi(Resource):
         if sort == 'hit_count':
             sub_query = db.select(DocumentSegment.document_id,
                                   db.func.sum(DocumentSegment.hit_count).label("total_hit_count")) \
-                .group_by(DocumentSegment.document_id) \
-                .subquery()
+                    .group_by(DocumentSegment.document_id) \
+                    .subquery()
 
             query = query.outerjoin(sub_query, sub_query.c.document_id == Document.id) \
-                .order_by(sort_logic(db.func.coalesce(sub_query.c.total_hit_count, 0)))
+                    .order_by(sort_logic(db.func.coalesce(sub_query.c.total_hit_count, 0)))
         elif sort == 'created_at':
             query = query.order_by(sort_logic(Document.created_at))
         else:
@@ -174,15 +174,13 @@ class DatasetDocumentListApi(Resource):
             page=page, per_page=limit, max_per_page=100, error_out=False)
         documents = paginated_documents.items
 
-        response = {
+        return {
             'data': marshal(documents, document_fields),
             'has_more': len(documents) == limit,
             'limit': limit,
             'total': paginated_documents.total,
-            'page': page
+            'page': page,
         }
-
-        return response
 
     @setup_required
     @login_required
@@ -270,12 +268,7 @@ class DatasetInitApi(Resource):
         except ModelCurrentlyNotSupportError:
             raise ProviderModelCurrentlyNotSupportError()
 
-        response = {
-            'dataset': dataset,
-            'document': document
-        }
-
-        return response
+        return {'dataset': dataset, 'document': document}
 
 
 class DocumentIndexingEstimateApi(DocumentResource):
@@ -346,15 +339,15 @@ class DocumentIndexingStatusApi(DocumentResource):
         document_id = str(document_id)
         document = self.get_document(dataset_id, document_id)
 
-        completed_segments = DocumentSegment.query \
-            .filter(DocumentSegment.completed_at.isnot(None),
-                    DocumentSegment.document_id == str(document_id),
-                    DocumentSegment.status != 're_segment') \
-            .count()
-        total_segments = DocumentSegment.query \
-            .filter(DocumentSegment.document_id == str(document_id),
-                    DocumentSegment.status != 're_segment') \
-            .count()
+        completed_segments = DocumentSegment.query.filter(
+            DocumentSegment.completed_at.isnot(None),
+            DocumentSegment.document_id == document_id,
+            DocumentSegment.status != 're_segment',
+        ).count()
+        total_segments = DocumentSegment.query.filter(
+            DocumentSegment.document_id == document_id,
+            DocumentSegment.status != 're_segment',
+        ).count()
 
         document.completed_segments = completed_segments
         document.total_segments = total_segments
@@ -556,7 +549,7 @@ class DocumentStatusApi(DocumentResource):
         if current_user.current_tenant.current_role not in ['admin', 'owner']:
             raise Forbidden()
 
-        indexing_cache_key = 'document_{}_indexing'.format(document.id)
+        indexing_cache_key = f'document_{document.id}_indexing'
         cache_result = redis_client.get(indexing_cache_key)
         if cache_result is not None:
             raise InvalidActionError("Document is being indexed, please try again later")

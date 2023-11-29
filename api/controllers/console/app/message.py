@@ -97,21 +97,26 @@ class ChatMessageListApi(Resource):
             raise NotFound("Conversation Not Exists.")
 
         if args['first_id']:
-            first_message = db.session.query(Message) \
-                .filter(Message.conversation_id == conversation.id, Message.id == args['first_id']).first()
-
-            if not first_message:
+            if (
+                first_message := db.session.query(Message)
+                .filter(
+                    Message.conversation_id == conversation.id,
+                    Message.id == args['first_id'],
+                )
+                .first()
+            ):
+                history_messages = db.session.query(Message).filter(
+                    Message.conversation_id == conversation.id,
+                    Message.created_at < first_message.created_at,
+                    Message.id != first_message.id
+                ) \
+                        .order_by(Message.created_at.desc()).limit(args['limit']).all()
+            else:
                 raise NotFound("First message not found")
 
-            history_messages = db.session.query(Message).filter(
-                Message.conversation_id == conversation.id,
-                Message.created_at < first_message.created_at,
-                Message.id != first_message.id
-            ) \
-                .order_by(Message.created_at.desc()).limit(args['limit']).all()
         else:
             history_messages = db.session.query(Message).filter(Message.conversation_id == conversation.id) \
-                .order_by(Message.created_at.desc()).limit(args['limit']).all()
+                    .order_by(Message.created_at.desc()).limit(args['limit']).all()
 
         has_more = False
         if len(history_messages) == args['limit']:
@@ -165,7 +170,7 @@ class MessageFeedbackApi(Resource):
             db.session.delete(feedback)
         elif args['rating'] and feedback:
             feedback.rating = args['rating']
-        elif not args['rating'] and not feedback:
+        elif not args['rating']:
             raise ValueError('rating cannot be None when feedback not exists')
         else:
             feedback = MessageFeedback(
@@ -208,9 +213,7 @@ class MessageAnnotationApi(Resource):
         if not message:
             raise NotFound("Message Not Exists.")
 
-        annotation = message.annotation
-
-        if annotation:
+        if annotation := message.annotation:
             annotation.content = args['content']
         else:
             annotation = MessageAnnotation(
@@ -288,33 +291,30 @@ class MessageMoreLikeThisApi(Resource):
 def compact_response(response: Union[dict | Generator]) -> Response:
     if isinstance(response, dict):
         return Response(response=json.dumps(response), status=200, mimetype='application/json')
-    else:
-        def generate() -> Generator:
-            try:
-                for chunk in response:
-                    yield chunk
-            except MessageNotExistsError:
-                yield "data: " + json.dumps(api.handle_error(NotFound("Message Not Exists.")).get_json()) + "\n\n"
-            except MoreLikeThisDisabledError:
-                yield "data: " + json.dumps(api.handle_error(AppMoreLikeThisDisabledError()).get_json()) + "\n\n"
-            except ProviderTokenNotInitError:
-                yield "data: " + json.dumps(api.handle_error(ProviderNotInitializeError()).get_json()) + "\n\n"
-            except QuotaExceededError:
-                yield "data: " + json.dumps(api.handle_error(ProviderQuotaExceededError()).get_json()) + "\n\n"
-            except ModelCurrentlyNotSupportError:
-                yield "data: " + json.dumps(
-                    api.handle_error(ProviderModelCurrentlyNotSupportError()).get_json()) + "\n\n"
-            except (LLMBadRequestError, LLMAPIConnectionError, LLMAPIUnavailableError,
+    def generate() -> Generator:
+        try:
+            yield from response
+        except MessageNotExistsError:
+            yield "data: " + json.dumps(api.handle_error(NotFound("Message Not Exists.")).get_json()) + "\n\n"
+        except MoreLikeThisDisabledError:
+            yield f"data: {json.dumps(api.handle_error(AppMoreLikeThisDisabledError()).get_json())}" + "\n\n"
+        except ProviderTokenNotInitError:
+            yield f"data: {json.dumps(api.handle_error(ProviderNotInitializeError()).get_json())}" + "\n\n"
+        except QuotaExceededError:
+            yield f"data: {json.dumps(api.handle_error(ProviderQuotaExceededError()).get_json())}" + "\n\n"
+        except ModelCurrentlyNotSupportError:
+            yield f"data: {json.dumps(api.handle_error(ProviderModelCurrentlyNotSupportError()).get_json())}" + "\n\n"
+        except (LLMBadRequestError, LLMAPIConnectionError, LLMAPIUnavailableError,
                     LLMRateLimitError, LLMAuthorizationError) as e:
-                yield "data: " + json.dumps(api.handle_error(CompletionRequestError(str(e))).get_json()) + "\n\n"
-            except ValueError as e:
-                yield "data: " + json.dumps(api.handle_error(e).get_json()) + "\n\n"
-            except Exception:
-                logging.exception("internal server error.")
-                yield "data: " + json.dumps(api.handle_error(InternalServerError()).get_json()) + "\n\n"
+            yield f"data: {json.dumps(api.handle_error(CompletionRequestError(str(e))).get_json())}" + "\n\n"
+        except ValueError as e:
+            yield f"data: {json.dumps(api.handle_error(e).get_json())}" + "\n\n"
+        except Exception:
+            logging.exception("internal server error.")
+            yield f"data: {json.dumps(api.handle_error(InternalServerError()).get_json())}" + "\n\n"
 
-        return Response(stream_with_context(generate()), status=200,
-                        mimetype='text/event-stream')
+    return Response(stream_with_context(generate()), status=200,
+                    mimetype='text/event-stream')
 
 
 class MessageSuggestedQuestionApi(Resource):
@@ -367,15 +367,14 @@ class MessageApi(Resource):
         # get app info
         app_model = _get_app(app_id, 'chat')
 
-        message = db.session.query(Message).filter(
-            Message.id == message_id,
-            Message.app_id == app_model.id
-        ).first()
-
-        if not message:
+        if (
+            message := db.session.query(Message)
+            .filter(Message.id == message_id, Message.app_id == app_model.id)
+            .first()
+        ):
+            return message
+        else:
             raise NotFound("Message Not Exists.")
-
-        return message
 
 
 api.add_resource(MessageMoreLikeThisApi, '/apps/<uuid:app_id>/completion-messages/<uuid:message_id>/more-like-this')

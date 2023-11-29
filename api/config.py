@@ -62,8 +62,7 @@ def get_bool_env(key):
 def get_cors_allow_origins(env, default):
     cors_allow_origins = []
     if get_env(env):
-        for origin in get_env(env).split(','):
-            cors_allow_origins.append(origin)
+        cors_allow_origins.extend(iter(get_env(env).split(',')))
     else:
         cors_allow_origins = [default]
 
@@ -171,8 +170,11 @@ class Config:
         # celery settings
         self.CELERY_BROKER_URL = get_env('CELERY_BROKER_URL')
         self.CELERY_BACKEND = get_env('CELERY_BACKEND')
-        self.CELERY_RESULT_BACKEND = 'db+{}'.format(self.SQLALCHEMY_DATABASE_URI) \
-            if self.CELERY_BACKEND == 'database' else self.CELERY_BROKER_URL
+        self.CELERY_RESULT_BACKEND = (
+            f'db+{self.SQLALCHEMY_DATABASE_URI}'
+            if self.CELERY_BACKEND == 'database'
+            else self.CELERY_BROKER_URL
+        )
         self.BROKER_USE_SSL = self.CELERY_BROKER_URL.startswith('rediss://')
 
         # hosted provider credentials

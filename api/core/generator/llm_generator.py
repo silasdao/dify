@@ -50,7 +50,7 @@ class LLMGenerator:
             if not message.answer:
                 continue
 
-            message_qa_text = "Human:" + message.query + "\nAI:" + message.answer + "\n"
+            message_qa_text = f"Human:{message.query}" + "\nAI:" + message.answer + "\n"
             if rest_tokens - TokenCalculator.get_num_tokens(generate_base_model, context + message_qa_text) > 0:
                 context += message_qa_text
 

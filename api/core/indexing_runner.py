@@ -139,12 +139,10 @@ class IndexingRunner:
                         DocumentRelationship.SOURCE: document_segment.document_id,
                     }
 
-                    previous_segment = document_segment.previous_segment
-                    if previous_segment:
+                    if previous_segment := document_segment.previous_segment:
                         relationships[DocumentRelationship.PREVIOUS] = previous_segment.index_node_id
 
-                    next_segment = document_segment.next_segment
-                    if next_segment:
+                    if next_segment := document_segment.next_segment:
                         relationships[DocumentRelationship.NEXT] = next_segment.index_node_id
                     node = Node(
                         doc_id=document_segment.index_node_id,
@@ -211,8 +209,8 @@ class IndexingRunner:
             raise ValueError("no upload file found")
 
         file_detail = db.session.query(UploadFile). \
-            filter(UploadFile.id == data_source_info['upload_file_id']). \
-            one_or_none()
+                filter(UploadFile.id == data_source_info['upload_file_id']). \
+                one_or_none()
 
         text_docs = self._load_data_from_file(file_detail)
 
@@ -222,9 +220,11 @@ class IndexingRunner:
             after_indexing_status="splitting",
             extra_update_params={
                 Document.file_id: file_detail.id,
-                Document.word_count: sum([len(text_doc.text) for text_doc in text_docs]),
-                Document.parsing_completed_at: datetime.datetime.utcnow()
-            }
+                Document.word_count: sum(
+                    len(text_doc.text) for text_doc in text_docs
+                ),
+                Document.parsing_completed_at: datetime.datetime.utcnow(),
+            },
         )
 
         # replace doc id to document model id
@@ -252,9 +252,7 @@ class IndexingRunner:
             file_extractor[".pdf"] = PDFParser({'upload_file': upload_file})
 
             loader = SimpleDirectoryReader(input_files=[filepath], file_extractor=file_extractor)
-            text_docs = loader.load_data()
-
-            return text_docs
+            return loader.load_data()
 
     def _get_node_parser(self, processing_rule: DatasetProcessRule) -> NodeParser:
         """
@@ -430,9 +428,8 @@ class IndexingRunner:
         )
 
     def _check_document_paused_status(self, document_id: str):
-        indexing_cache_key = 'document_{}_is_paused'.format(document_id)
-        result = redis_client.get(indexing_cache_key)
-        if result:
+        indexing_cache_key = f'document_{document_id}_is_paused'
+        if result := redis_client.get(indexing_cache_key):
             raise DocumentIsPausedException()
 
     def _update_document_index_status(self, document_id: str, after_indexing_status: str,

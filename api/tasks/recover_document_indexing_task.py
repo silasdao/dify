@@ -20,7 +20,7 @@ def recover_document_indexing_task(dataset_id: str, document_id: str):
 
     Usage: recover_document_indexing_task.delay(dataset_id, document_id)
     """
-    logging.info(click.style('Recover document: {}'.format(document_id), fg='green'))
+    logging.info(click.style(f'Recover document: {document_id}', fg='green'))
     start_at = time.perf_counter()
 
     document = db.session.query(Document).filter(
@@ -40,9 +40,18 @@ def recover_document_indexing_task(dataset_id: str, document_id: str):
         elif document.indexing_status == "indexing":
             indexing_runner.run_in_indexing_status(document)
         end_at = time.perf_counter()
-        logging.info(click.style('Processed document: {} latency: {}'.format(document.id, end_at - start_at), fg='green'))
+        logging.info(
+            click.style(
+                f'Processed document: {document.id} latency: {end_at - start_at}',
+                fg='green',
+            )
+        )
     except DocumentIsPausedException:
-        logging.info(click.style('Document paused, document id: {}'.format(document.id), fg='yellow'))
+        logging.info(
+            click.style(
+                f'Document paused, document id: {document.id}', fg='yellow'
+            )
+        )
     except Exception as e:
         logging.exception("consume document failed")
         document.indexing_status = 'error'

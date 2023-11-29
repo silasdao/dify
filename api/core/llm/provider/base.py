@@ -24,19 +24,18 @@ class BaseProvider(ABC):
         if not provider:
             raise ProviderTokenNotInitError()
 
-        if provider.provider_type == ProviderType.SYSTEM.value:
-            quota_used = provider.quota_used if provider.quota_used is not None else 0
-            quota_limit = provider.quota_limit if provider.quota_limit is not None else 0
-
-            if model_id and model_id == 'gpt-4':
-                raise ModelCurrentlyNotSupportError()
-
-            if quota_used >= quota_limit:
-                raise QuotaExceededError()
-
-            return self.get_hosted_credentials()
-        else:
+        if provider.provider_type != ProviderType.SYSTEM.value:
             return self.get_decrypted_token(provider.encrypted_config)
+        quota_used = provider.quota_used if provider.quota_used is not None else 0
+        quota_limit = provider.quota_limit if provider.quota_limit is not None else 0
+
+        if model_id and model_id == 'gpt-4':
+            raise ModelCurrentlyNotSupportError()
+
+        if quota_used >= quota_limit:
+            raise QuotaExceededError()
+
+        return self.get_hosted_credentials()
 
     def get_provider(self, prefer_custom: bool) -> Optional[Provider]:
         """
@@ -94,10 +93,7 @@ class BaseProvider(ABC):
         except:
             config = ''
 
-        if obfuscated:
-            return self.obfuscated_token(config)
-
-        return config
+        return self.obfuscated_token(config) if obfuscated else config
 
     def obfuscated_token(self, token: str):
         return token[:6] + '*' * (len(token) - 8) + token[-2:]

@@ -15,7 +15,7 @@ def parse_json_markdown(json_string: str) -> dict:
 
         # Parse the JSON string into a Python dictionary
         parsed = json.loads(extracted_content)
-    elif start_index != -1 and end_index == -1 and json_string.endswith("``"):
+    elif start_index != -1 and json_string.endswith("``"):
         end_index = json_string.find("``", start_index + len("```json"))
         extracted_content = json_string[start_index + len("```json"):end_index].strip()
 

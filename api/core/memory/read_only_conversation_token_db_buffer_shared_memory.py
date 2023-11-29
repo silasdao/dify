@@ -31,9 +31,12 @@ class ReadOnlyConversationTokenDBBufferSharedMemory(BaseChatMemory):
 
         chat_messages: List[BaseMessage] = []
         for message in messages:
-            chat_messages.append(HumanMessage(content=message.query))
-            chat_messages.append(AIMessage(content=message.answer))
-
+            chat_messages.extend(
+                (
+                    HumanMessage(content=message.query),
+                    AIMessage(content=message.answer),
+                )
+            )
         if not chat_messages:
             return chat_messages
 

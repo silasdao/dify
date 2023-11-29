@@ -37,25 +37,28 @@ class ProviderListApi(Resource):
         ProviderService.init_supported_provider(current_user.current_tenant, "cloud")
         providers = Provider.query.filter_by(tenant_id=tenant_id).all()
 
-        provider_list = [
+        return [
             {
                 'provider_name': p.provider_name,
                 'provider_type': p.provider_type,
                 'is_valid': p.is_valid,
                 'last_used': p.last_used,
                 'is_enabled': p.is_enabled,
-                **({
-                       'quota_type': p.quota_type,
-                       'quota_limit': p.quota_limit,
-                       'quota_used': p.quota_used
-                   } if p.provider_type == ProviderType.SYSTEM.value else {}),
-                'token': ProviderService.get_obfuscated_api_key(current_user.current_tenant,
-                                                                ProviderName(p.provider_name))
+                **(
+                    {
+                        'quota_type': p.quota_type,
+                        'quota_limit': p.quota_limit,
+                        'quota_used': p.quota_used,
+                    }
+                    if p.provider_type == ProviderType.SYSTEM.value
+                    else {}
+                ),
+                'token': ProviderService.get_obfuscated_api_key(
+                    current_user.current_tenant, ProviderName(p.provider_name)
+                ),
             }
             for p in providers
         ]
-
-        return provider_list
 
 
 class ProviderTokenApi(Resource):
